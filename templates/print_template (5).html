@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <title>Είσοδος Ιατρού - Dynamic Cells</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            /* ΤΟ ΔΙΚΟ ΣΟΥ ΣΤΑΘΕΡΟ LINK ΓΙΑ ΤΟ BACKGROUND */
+            background-image: url('https://cdn.shopify.com/s/files/1/0906/4575/8288/files/bg_jpg.jpg?v=1779997490'); 
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            margin: 0; 
+        }
+        .login-container { 
+            background: rgba(255, 255, 255, 0.96); 
+            padding: 40px; 
+            border-radius: 12px; 
+            box-shadow: 0 8px 32px rgba(0,0,0,0.25); 
+            width: 100%; 
+            max-width: 400px; 
+            text-align: center; 
+            backdrop-filter: blur(4px); 
+        }
+        h2 { margin-bottom: 10px; color: #000; text-transform: uppercase; font-size: 24px; letter-spacing: 1px; }
+        p.subtitle { color: #555; font-size: 13px; margin-bottom: 30px; font-weight: bold; }
+        .form-group { margin-bottom: 20px; text-align: left; }
+        label { font-weight: bold; display: block; margin-bottom: 8px; text-transform: uppercase; font-size: 12px; color: #333; }
+        input[type="text"], input[type="password"] { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 15px; background: #fbfbfb; }
+        input[type="text"]:focus, input[type="password"]:focus { border-color: #333; outline: none; background: #fff; }
+        .btn-login { background: #222; color: white; border: none; padding: 13px; font-size: 16px; font-weight: bold; border-radius: 6px; cursor: pointer; text-transform: uppercase; width: 100%; margin-top: 10px; transition: background 0.2s; }
+        .btn-login:hover { background: #000; }
+        .register-link { margin-top: 25px; border-top: 1px solid #ddd; padding-top: 20px; font-size: 14px; color: #445; }
+        .register-link a { color: #28a745; text-decoration: none; font-weight: bold; }
+        .register-link a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+<div class="login-container">
+    <h2>DYNAMIC CELLS</h2>
+    <p class="subtitle">ΕΙΣΟΔΟΣ ΣΤΟ ΣΥΣΤΗΜΑ ΙΑΤΡΙΚΗΣ ΑΓΩΓΗΣ</p>
+    
+    <form action="/login" method="POST">
+        <div class="form-group">
+            <label>Username:</label>
+            <input type="text" name="username" required placeholder="Το όνομα χρήστη σας">
+        </div>
+        
+        <div class="form-group">
+            <label>Password:</label>
+            <input type="password" name="password" required placeholder="Ο κωδικός πρόσβασης">
+        </div>
+        
+        <button type="submit" class="btn-login">Είσοδος</button>
+    </form>
+    
+    <div class="register-link">
+        Νέος συνεργάτης; <a href="/register">Δημιουργήστε λογαριασμό εδώ</a>
+    </div>
+</div>
+
+</body>
+</html>
