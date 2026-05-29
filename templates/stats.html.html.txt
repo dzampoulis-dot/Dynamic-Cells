@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head><title>Τα Στατιστικά μου</title></head>
+<body>
+    <h1>Τα αποτελέσματα της συνταγογράφησής μου</h1>
+    <table border="1">
+        <tr>
+            <th>Περιγραφή</th>
+            <th>Ποσότητα</th>
+        </tr>
+        <tr><td>Συνολικά D3</td><td>{{ stats.total_d3 }}</td></tr>
+        <tr><td>Συνολικό Μαγνήσιο</td><td>{{ stats.total_mg }}</td></tr>
+        <tr><td>D3 σε εκκρεμότητα (pending)</td><td>{{ stats.pending_d3 }}</td></tr>
+        <tr><td>Μαγνήσιο σε εκκρεμότητα (pending)</td><td>{{ stats.pending_mg }}</td></tr>
+    </table>
+    <br>
+    <a href="/dashboard">Επιστροφή στο Dashboard</a>
+</body>
+</html>
