@@ -6,7 +6,6 @@ import os
 app = Flask(__name__, template_folder='templates')
 app.secret_key = 'dynamic_cells_123'
 
-# Ο κώδικας διαβάζει πλέον το URL από τις ρυθμίσεις του Render
 DATABASE_URL = os.environ.get('DATABASE_URL')
 
 def get_db_connection():
@@ -21,7 +20,6 @@ def init_db():
     cursor.close()
     conn.close()
 
-# Αρχικοποίηση της βάσης
 try:
     init_db()
 except Exception as e:
@@ -44,7 +42,7 @@ def login():
             session['doctor_name'] = doctor['name']
             return redirect('/dashboard')
         return "Λάθος στοιχεία!"
-    return render_template('login.html.html')
+    return render_template('login.html')
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -63,7 +61,7 @@ def register():
             conn.rollback()
         conn.close()
         return redirect('/dashboard')
-    return render_template('register.html.html')
+    return render_template('register.html')
 
 @app.route('/dashboard')
 def dashboard():
@@ -73,7 +71,7 @@ def dashboard():
     cursor.execute('SELECT * FROM doctors WHERE id = %s', (session['doctor_id'],))
     doctor = cursor.fetchone()
     conn.close()
-    return render_template('dashboard.html.html', doctor=doctor)
+    return render_template('dashboard.html', doctor=doctor)
 
 @app.route('/my_stats')
 def my_stats():
@@ -86,7 +84,7 @@ def my_stats():
                       FROM recommendations WHERE doctor_id = %s''', (session['doctor_id'],))
     stats = cursor.fetchone()
     conn.close()
-    return render_template('stats.html.html', stats=stats)
+    return render_template('stats.html', stats=stats)
 
 @app.route('/issue_recommendation', methods=['POST'])
 def issue_recommendation():
@@ -111,7 +109,7 @@ def admin():
     cursor.execute('SELECT d.id, d.name, SUM(r.d3_qty) as total_d3, SUM(r.magnesium_qty) as total_mg FROM doctors d LEFT JOIN recommendations r ON d.id = r.doctor_id GROUP BY d.id, d.name')
     doctor_stats = cursor.fetchall()
     conn.close()
-    return render_template('admin.html.html', doctor_stats=doctor_stats)
+    return render_template('admin.html', doctor_stats=doctor_stats)
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 10000))
