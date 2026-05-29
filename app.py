@@ -6,7 +6,8 @@ import os
 app = Flask(__name__, template_folder='templates')
 app.secret_key = 'dynamic_cells_123'
 
-DATABASE_URL = "postgresql://postgres:DynamicCells1!@db.lwxbuotfkpdlqvsuslkx.supabase.co:5432/postgres"
+# Χρήση θύρας 6543 για το Connection Pooler του Supabase
+DATABASE_URL = "postgresql://postgres:DynamicCells1!@db.lwxbuotfkpdlqvsuslkx.supabase.co:6543/postgres"
 
 def get_db_connection():
     return psycopg2.connect(DATABASE_URL, cursor_factory=DictCursor)
@@ -109,6 +110,5 @@ def admin():
     return render_template('admin.html.html', doctor_stats=doctor_stats)
 
 if __name__ == '__main__':
-    # Αυτή η γραμμή διορθώνει το πρόβλημα με το port στο Render
     port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
