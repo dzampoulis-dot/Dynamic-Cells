@@ -4,7 +4,7 @@ from sqlalchemy import create_engine, text
 
 app = Flask(__name__)
 
-# Το σωστό URL με τον κωδικό που έθεσες
+# Το σωστό URL με το Transaction Pooler
 DATABASE_URL = "postgresql://postgres.lwxbuotfkpdlqvsuslkx:DynamicCells1!2@aws-0-eu-west-1.pooler.supabase.com:6543/postgres"
 
 engine = create_engine(DATABASE_URL)
@@ -15,7 +15,7 @@ def home():
         # Δοκιμή σύνδεσης
         with engine.connect() as conn:
             conn.execute(text("SELECT 1"))
-        return "Η βάση συνδέθηκε επιτυχώς και η εφαρμογή τρέχει!"
+        return "Η βάση συνδέθηκε επιτυχώς!"
     except Exception as e:
         return f"Σφάλμα σύνδεσης: {str(e)}"
 
