@@ -108,5 +108,7 @@ def admin():
     conn.close()
     return render_template('admin.html.html', doctor_stats=doctor_stats)
 
+# Διορθωμένο κομμάτι για να τρέχει στο Render
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host='0.0.0.0', port=port)
