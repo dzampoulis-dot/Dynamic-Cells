@@ -11,43 +11,23 @@ DATABASE_URL = "postgresql://postgres:DynamicCells1!@db.lwxbuotfkpdlqvsuslkx.sup
 def get_db_connection():
     return psycopg2.connect(DATABASE_URL, cursor_factory=DictCursor)
 
-# LOGIN
+# ΠΡΟΣΘΗΚΗ ΑΥΤΟΥ ΤΟΥ ΚΟΜΜΑΤΙΟΥ ΓΙΑ ΝΑ ΜΗΝ ΚΡΑΣΑΡΕΙ
+def init_db():
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('''CREATE TABLE IF NOT EXISTS doctors 
+                   (id SERIAL PRIMARY KEY, name TEXT, specialty TEXT, address TEXT, phone TEXT, username TEXT UNIQUE, password TEXT)''')
+    cur.execute('''CREATE TABLE IF NOT EXISTS recommendations 
+                   (id SERIAL PRIMARY KEY, doctor_id INTEGER REFERENCES doctors(id), diagnosis TEXT, d3_qty INTEGER, magnesium_qty INTEGER, special_notes TEXT, status TEXT)''')
+    conn.commit()
+    cur.close()
+    conn.close()
+
+# Τρέχει μια φορά κατά την εκκίνηση
+init_db()
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'GET':
         return render_template('login.html')
-    username = request.form['username']
-    password = request.form['password']
-    conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute("SELECT * FROM doctors WHERE username = %s AND password = %s", (username, password))
-    doctor = cur.fetchone()
-    conn.close()
-    if doctor:
-        session['doctor_id'] = doctor['id']
-        session['doctor_name'] = doctor['name']
-        return redirect('/dashboard')
-    return "Λάθος στοιχεία!"
-
-# DASHBOARD
-@app.route('/dashboard')
-def dashboard():
-    if 'doctor_id' not in session: return redirect('/login')
-    return render_template('dashboard.html', doctor_name=session.get('doctor_name'))
-
-# ISSUE RECOMMENDATION
-@app.route('/issue_recommendation', methods=['POST'])
-def issue_recommendation():
-    if 'doctor_id' not in session: return redirect('/login')
-    # Εδώ μπαίνει η λογική της συνταγογράφησης που είχες
-    return "Συνταγογράφηση επιτυχής!"
-
-# ADMIN
-@app.route('/admin')
-def admin():
-    if session.get('doctor_name') != 'Admin': return "Όχι πρόσβαση!", 403
-    return render_template('admin.html')
-
-if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host='0.0.0.0', port=port)
+    # ... (ο υπόλοιπος κώδικας σου)
