@@ -6,7 +6,8 @@ import os
 app = Flask(__name__, template_folder='templates')
 app.secret_key = 'dynamic_cells_123'
 
-DATABASE_URL = "postgresql://postgres:DynamicCells1!@db.lwxbuotfkpdlqvsuslkx.supabase.co:5432/postgres"
+# Ο κώδικας διαβάζει πλέον το URL από τις ρυθμίσεις του Render
+DATABASE_URL = os.environ.get('DATABASE_URL')
 
 def get_db_connection():
     return psycopg2.connect(DATABASE_URL, cursor_factory=DictCursor)
@@ -20,7 +21,11 @@ def init_db():
     cursor.close()
     conn.close()
 
-init_db()
+# Αρχικοποίηση της βάσης
+try:
+    init_db()
+except Exception as e:
+    print(f"Error initializing database: {e}")
 
 @app.route('/')
 @app.route('/login', methods=['GET', 'POST'])
@@ -109,4 +114,5 @@ def admin():
     return render_template('admin.html.html', doctor_stats=doctor_stats)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get('PORT', 10000))
+    app.run(host='0.0.0.0', port=port)
