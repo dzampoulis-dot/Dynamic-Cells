@@ -1,30 +1,52 @@
+from flask import Flask, render_template, request, redirect, session
+import psycopg2
+from psycopg2.extras import DictCursor
 import os
-from flask import Flask
-from sqlalchemy import create_engine, text
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder='templates')
+app.secret_key = 'dynamic_cells_123'
 
-# Το URL της βάσης σου
-DATABASE_URL = "postgresql://postgres.lwxbuotfkpdlqvsuslkx:DynamicCells1!2@aws-0-eu-west-1.pooler.supabase.com:6543/postgres"
-engine = create_engine(DATABASE_URL)
+DATABASE_URL = "postgresql://postgres:DynamicCells1!@db.lwxbuotfkpdlqvsuslkx.supabase.co:5432/postgres"
 
-@app.route('/')
-def home():
-    try:
-        # Δοκιμή σύνδεσης
-        with engine.connect() as conn:
-            conn.execute(text("SELECT 1"))
-        # Αυτό είναι το HTML που θα εμφανιστεί στην οθόνη σου
-        return """
-        <html>
-            <body style="font-family: sans-serif; text-align: center; padding-top: 50px;">
-                <h1 style="color: #2c3e50;">Η εφαρμογή DynamicCells είναι έτοιμη!</h1>
-                <p style="color: #27ae60; font-size: 1.2em;">Η σύνδεση με τη βάση δεδομένων λειτουργεί κανονικά.</p>
-            </body>
-        </html>
-        """
-    except Exception as e:
-        return f"<h1>Σφάλμα</h1><p>{str(e)}</p>"
+def get_db_connection():
+    return psycopg2.connect(DATABASE_URL, cursor_factory=DictCursor)
+
+# LOGIN
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'GET':
+        return render_template('login.html')
+    username = request.form['username']
+    password = request.form['password']
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM doctors WHERE username = %s AND password = %s", (username, password))
+    doctor = cur.fetchone()
+    conn.close()
+    if doctor:
+        session['doctor_id'] = doctor['id']
+        session['doctor_name'] = doctor['name']
+        return redirect('/dashboard')
+    return "Λάθος στοιχεία!"
+
+# DASHBOARD
+@app.route('/dashboard')
+def dashboard():
+    if 'doctor_id' not in session: return redirect('/login')
+    return render_template('dashboard.html', doctor_name=session.get('doctor_name'))
+
+# ISSUE RECOMMENDATION
+@app.route('/issue_recommendation', methods=['POST'])
+def issue_recommendation():
+    if 'doctor_id' not in session: return redirect('/login')
+    # Εδώ μπαίνει η λογική της συνταγογράφησης που είχες
+    return "Συνταγογράφηση επιτυχής!"
+
+# ADMIN
+@app.route('/admin')
+def admin():
+    if session.get('doctor_name') != 'Admin': return "Όχι πρόσβαση!", 403
+    return render_template('admin.html')
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 10000))
