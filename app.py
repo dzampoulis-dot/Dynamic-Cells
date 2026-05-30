@@ -2,12 +2,17 @@ from flask import Flask, render_template, request, redirect, session
 import psycopg2
 from psycopg2.extras import DictCursor
 import os
+import sys
 
 app = Flask(__name__, template_folder='templates')
 app.secret_key = os.environ.get('SECRET_KEY', 'dynamic_cells_123')
 
-# ΒΑΛΕ ΕΔΩ ΤΟ URL ΑΠΕΥΘΕΙΑΣ - ΤΕΛΟΣ ΤΑ ENV
-DATABASE_URL = "postgresql://postgres.lwxbuotfkpdlqvsuslkx:DynamicCells434@aws-0-eu-central-1.pooler.supabase.com:6543/postgres?sslmode=require&options=project%3Dlwxbuotfkpdlqvsuslkx"
+# ΔΙΑΒΑΖΕΙ ΑΠΟ RENDER ENVIRONMENT - ΟΧΙ HARDCODED
+DATABASE_URL = os.environ.get('DATABASE_URL')
+if not DATABASE_URL:
+    raise ValueError("DATABASE_URL environment variable is not set! Check Render Environment")
+
+print(f"=== USING DATABASE: {DATABASE_URL[:60]}... ===", file=sys.stderr)
 
 def get_db_connection():
     return psycopg2.connect(DATABASE_URL, cursor_factory=DictCursor)
@@ -40,7 +45,7 @@ def login():
                 return redirect('/dashboard')
             return "Λάθος στοιχεία!"
         except Exception as e:
-            print(f"Login error: {e}")
+            print(f"Login error: {e}", file=sys.stderr)
             return f"Σφάλμα σύνδεσης: {e}"
     return render_template('login.html')
 
@@ -64,7 +69,7 @@ def register():
             cursor.close()
             conn.close()
         except Exception as e:
-            print(f"Register error: {e}")
+            print(f"Register error: {e}", file=sys.stderr)
             return f"Σφάλμα εγγραφής: {e}"
         return redirect('/dashboard')
     return render_template('register.html')
@@ -81,6 +86,7 @@ def dashboard():
         conn.close()
         return render_template('dashboard.html', doctor=doctor)
     except Exception as e:
+        print(f"Dashboard error: {e}", file=sys.stderr)
         return f"Σφάλμα: {e}"
 
 @app.route('/my_stats')
@@ -100,6 +106,7 @@ def my_stats():
         conn.close()
         return render_template('stats.html', stats=stats)
     except Exception as e:
+        print(f"Stats error: {e}", file=sys.stderr)
         return f"Σφάλμα: {e}"
 
 @app.route('/issue_recommendation', methods=['POST'])
@@ -118,7 +125,7 @@ def issue_recommendation():
         conn.close()
         return "Συνταγογράφηση επιτυχής!"
     except Exception as e:
-        print(f"Issue rec error: {e}")
+        print(f"Issue rec error: {e}", file=sys.stderr)
         return f"Σφάλμα: {e}"
 
 @app.route('/admin')
@@ -134,6 +141,7 @@ def admin():
         conn.close()
         return render_template('admin.html', doctor_stats=doctor_stats)
     except Exception as e:
+        print(f"Admin error: {e}", file=sys.stderr)
         return f"Σφάλμα: {e}"
 
 if __name__ == '__main__':
