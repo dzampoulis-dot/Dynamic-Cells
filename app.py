@@ -163,9 +163,9 @@ def print_prescription(rec_id):
                 'phone': rec['phone']
             },
             diagnosis=rec['diagnosis'],
-            d3_qty=rec['d3_qty'],
+            d3_qty=rec['d3_qty'] or 0,
             d3_days=d3_days,
-            magnesium_qty=rec['magnesium_qty'],
+            magnesium_qty=rec['magnesium_qty'] or 0,
             magnesium_days=magnesium_days,
             special_notes=rec['special_notes']
         )
