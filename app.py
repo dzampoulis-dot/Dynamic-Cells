@@ -63,7 +63,7 @@ def login():
         if doctor and check_password_hash(doctor['password'], password):
             session['doctor_id'] = doctor['id']
             session['doctor_name'] = doctor['name']
-            session['username'] = doctor['username']  # ΑΛΛΑΓΗ 1: Αποθηκεύουμε και το username
+            session['username'] = doctor['username']
             return redirect(url_for('dashboard'))
         return "Λάθος στοιχεία!"
     return render_template('login.html')
@@ -81,11 +81,11 @@ def register():
         conn = get_db_connection()
         cursor = conn.cursor()
         try:
-            cursor.execute('INSERT INTO doctors (name, specialty, address, phone, username, password) VALUES (%s,%s,%s,%s,%s,%s) RETURNING id',
+            cursor.execute('INSERT INTO doctors (name, specialty, address, phone, username, password) VALUES (%s,%s,%s,%s) RETURNING id',
                            (name, specialty, address, phone, username, password))
             session['doctor_id'] = cursor.fetchone()['id']
             session['doctor_name'] = name
-            session['username'] = username  # ΑΛΛΑΓΗ 2: Αποθηκεύουμε και το username
+            session['username'] = username
             conn.commit()
             cursor.close()
             conn.close()
@@ -111,30 +111,57 @@ def dashboard():
 def issue_recommendation():
     if 'doctor_id' not in session: 
         return redirect(url_for('login'))
+    
     doctor_id = session['doctor_id']
     d3_qty = int(request.form.get('d3_qty', 0)) if request.form.get('d3_active') == '1' else 0
     magnesium_qty = int(request.form.get('magnesium_qty', 0)) if request.form.get('magnesium_active') == '1' else 0
+    diagnosis = request.form.get('diagnosis', '')
+    special_notes = request.form.get('special_notes', '')
     
     conn = get_db_connection()
     cursor = conn.cursor()
+    
+    # ΔΙΟΡΘΩΣΗ: 6 πεδία, 6 values
     cursor.execute('''INSERT INTO recommendations 
         (doctor_id, diagnosis, d3_qty, magnesium_qty, special_notes, status) 
-        VALUES (%s,%s,%s,%s,%s,%s) RETURNING id''',
-        (doctor_id, request.form.get('diagnosis', ''), d3_qty, magnesium_qty, 
-         request.form.get('special_notes', ''), 'pending'))
+        VALUES (%s, %s, %s, %s, %s, %s) RETURNING id''',
+        (doctor_id, diagnosis, d3_qty, magnesium_qty, special_notes, 'pending'))
     
     rec_id = cursor.fetchone()['id']
+    
+    cursor.execute('SELECT * FROM doctors WHERE id = %s', (doctor_id,))
+    doctor = cursor.fetchone()
+    
     conn.commit()
     conn.close()
     
-    return f"Συνταγογράφηση #{rec_id} επιτυχής! <a href='/dashboard'>Επιστροφή</a>"
+    now = datetime.now()
+    current_date = now.strftime('%d/%m/%Y')
+    current_time = now.strftime('%H:%M')
+    
+    # 1 τεμάχιο = 30 μέρες
+    d3_days = d3_qty * 30
+    magnesium_days = magnesium_qty * 30
+    
+    # ΔΙΟΡΘΩΣΗ: Επιστρέφει το template εκτύπωσης
+    return render_template('print_rec.html', 
+                         serial=rec_id,
+                         doctor=doctor,
+                         diagnosis=diagnosis,
+                         d3_qty=d3_qty,
+                         magnesium_qty=magnesium_qty,
+                         d3_days=d3_days,
+                         magnesium_days=magnesium_days,
+                         special_notes=special_notes,
+                         current_date=current_date,
+                         current_time=current_time)
 
 @app.route('/my_stats')
 def my_stats():
     if 'doctor_id' not in session: 
         return redirect(url_for('login'))
     
-    if session.get('username') == 'admin':  # ΑΛΛΑΓΗ 3: Έλεγχος με username
+    if session.get('username') == 'admin':
         return redirect(url_for('admin'))
     
     conn = get_db_connection()
@@ -157,7 +184,7 @@ def my_stats():
 
 @app.route('/admin')
 def admin():
-    if session.get('username') != 'admin':  # ΑΛΛΑΓΗ 4: Έλεγχος με username
+    if session.get('username') != 'admin':
         return "Δεν έχετε δικαίωμα πρόσβασης!", 403
     
     conn = get_db_connection()
@@ -195,7 +222,7 @@ def admin():
 
 @app.route('/admin/recommendations')
 def admin_recommendations():
-    if session.get('username') != 'admin':  # ΑΛΛΑΓΗ 5: Έλεγχος με username
+    if session.get('username') != 'admin':
         return "Δεν έχετε δικαίωμα πρόσβασης!", 403
     
     status_filter = request.args.get('status', 'all')
@@ -236,7 +263,7 @@ def admin_recommendations():
 
 @app.route('/admin/update_status/<int:rec_id>/<status>', methods=['POST'])
 def update_status(rec_id, status):
-    if session.get('username') != 'admin':  # ΑΛΛΑΓΗ 6: Έλεγχος με username
+    if session.get('username') != 'admin':
         return "Δεν έχετε δικαίωμα πρόσβασης!", 403
     if status not in ['pending', 'paid']:
         return "Λάθος status", 400
@@ -250,7 +277,7 @@ def update_status(rec_id, status):
 
 @app.route('/admin/clear/<int:doctor_id>', methods=['POST'])
 def admin_clear(doctor_id):
-    if session.get('username') != 'admin':  # ΑΛΛΑΓΗ 7: Έλεγχος με username
+    if session.get('username') != 'admin':
         return "Δεν έχετε δικαίωμα πρόσβασης!", 403
     
     conn = get_db_connection()
