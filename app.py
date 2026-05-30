@@ -76,9 +76,7 @@ def register():
         phone = request.form['phone']
         username = request.form['username'].lower()
         
-        # ΜΠΛΟΚΑΡΟΥΜΕ ΤΟ ADMIN USERNAME
-        if username == 'admin':
-            return "Αυτό το username δεν επιτρέπεται!"
+        # ΤΟ ΜΠΛΟΚΑΡΙΣΜΑ ΕΙΝΑΙ ΣΒΗΣΜΕΝΟ ΓΙΑ ΝΑ ΦΤΙΑΞΕΙΣ ΤΟΝ ADMIN
         
         password = generate_password_hash(request.form['password'])
         
@@ -96,7 +94,7 @@ def register():
         except psycopg2.IntegrityError:
             conn.rollback()
             conn.close()
-            return "Το username υπάρχει ήδη!"
+            return render_template('register.html', error="Το username υπάρχει ήδη!")
     return render_template('register.html')
 
 @app.route('/dashboard')
@@ -122,7 +120,7 @@ def issue_recommendation():
     cursor = conn.cursor()
     cursor.execute('''INSERT INTO recommendations 
         (doctor_id, diagnosis, d3_qty, magnesium_qty, special_notes, status) 
-        VALUES (%s,%s,%s,%s,%s,%s) RETURNING id''',
+        VALUES (%s,%s,%s,%s) RETURNING id''',
         (doctor_id, request.form.get('diagnosis', ''), d3_qty, magnesium_qty, 
          request.form.get('special_notes', ''), 'pending'))
     
