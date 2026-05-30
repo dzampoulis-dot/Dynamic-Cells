@@ -3,6 +3,7 @@ import psycopg2
 from psycopg2.extras import DictCursor
 import os
 import sys
+from datetime import datetime
 
 app = Flask(__name__, template_folder='templates')
 app.secret_key = os.environ.get('SECRET_KEY', 'dynamic_cells_123')
@@ -125,16 +126,49 @@ def issue_recommendation():
 
 @app.route('/print_prescription/<int:rec_id>')
 def print_prescription(rec_id):
-    if 'doctor_id' not in session: return redirect('/login')
+    if 'doctor_id' not in session: 
+        return redirect('/login')
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute('SELECT r.*, d.name as doctor_name, d.specialty, d.address, d.phone FROM recommendations r JOIN doctors d ON r.doctor_id = d.id WHERE r.id = %s', (rec_id,))
+        cursor.execute('''
+            SELECT r.*, d.name as doctor_name, d.specialty, d.address, d.phone 
+            FROM recommendations r 
+            JOIN doctors d ON r.doctor_id = d.id 
+            WHERE r.id = %s AND r.doctor_id = %s
+        ''', (rec_id, session['doctor_id']))
         rec = cursor.fetchone()
         cursor.close()
         conn.close()
-        # Περνάμε το rec τόσο ως 'rec' όσο και ως 'doctor' για να μην βγάζει το σφάλμα
-        return render_template('print.html', rec=rec, doctor=rec)
+        
+        if not rec:
+            return "Δεν βρέθηκε η συνταγογράφηση!", 404
+        
+        d3_days = rec['d3_qty'] * 30 if rec['d3_qty'] else 0
+        magnesium_days = rec['magnesium_qty'] * 30 if rec['magnesium_qty'] else 0
+        
+        now = datetime.now()
+        current_date = now.strftime('%d/%m/%Y')
+        current_time = now.strftime('%H:%M')
+        serial = f"DC-{now.year}-{rec_id:06d}"
+        
+        return render_template('print.html', 
+            serial=serial,
+            current_date=current_date,
+            current_time=current_time,
+            doctor={
+                'name': rec['doctor_name'],
+                'specialty': rec['specialty'],
+                'address': rec['address'],
+                'phone': rec['phone']
+            },
+            diagnosis=rec['diagnosis'],
+            d3_qty=rec['d3_qty'],
+            d3_days=d3_days,
+            magnesium_qty=rec['magnesium_qty'],
+            magnesium_days=magnesium_days,
+            special_notes=rec['special_notes']
+        )
     except Exception as e:
         print(f"Print error: {e}", file=sys.stderr)
         return f"Σφάλμα εκτύπωσης: {e}"
