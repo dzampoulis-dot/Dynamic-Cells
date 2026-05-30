@@ -26,17 +26,21 @@ def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute('SELECT * FROM doctors WHERE username = %s AND password = %s', (username, password))
-        doctor = cursor.fetchone()
-        cursor.close()
-        conn.close()
-        if doctor:
-            session['doctor_id'] = doctor['id']
-            session['doctor_name'] = doctor['name']
-            return redirect('/dashboard')
-        return "Λάθος στοιχεία!"
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            cursor.execute('SELECT * FROM doctors WHERE username = %s AND password = %s', (username, password))
+            doctor = cursor.fetchone()
+            cursor.close()
+            conn.close()
+            if doctor:
+                session['doctor_id'] = doctor['id']
+                session['doctor_name'] = doctor['name']
+                return redirect('/dashboard')
+            return "Λάθος στοιχεία!"
+        except Exception as e:
+            print(f"Login error: {e}")
+            return f"Σφάλμα σύνδεσης: {e}"
     return render_template('login.html')
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -67,25 +71,35 @@ def register():
 @app.route('/dashboard')
 def dashboard():
     if 'doctor_id' not in session: return redirect('/login')
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute('SELECT * FROM doctors WHERE id = %s', (session['doctor_id'],))
-    doctor = cursor.fetchone()
-    conn.close()
-    return render_template('dashboard.html', doctor=doctor)
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute('SELECT * FROM doctors WHERE id = %s', (session['doctor_id'],))
+        doctor = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        return render_template('dashboard.html', doctor=doctor)
+    except Exception as e:
+        return f"Σφάλμα: {e}"
 
 @app.route('/my_stats')
 def my_stats():
     if 'doctor_id' not in session: return redirect('/login')
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute('''SELECT SUM(d3_qty) as total_d3, SUM(magnesium_qty) as total_mg, 
-                      SUM(CASE WHEN status = 'pending' THEN d3_qty ELSE 0 END) as pending_d3, 
-                      SUM(CASE WHEN status = 'pending' THEN magnesium_qty ELSE 0 END) as pending_mg 
-                      FROM recommendations WHERE doctor_id = %s''', (session['doctor_id'],))
-    stats = cursor.fetchone()
-    conn.close()
-    return render_template('stats.html', stats=stats)
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute('''SELECT 
+                          COALESCE(SUM(d3_qty), 0) as total_d3, 
+                          COALESCE(SUM(magnesium_qty), 0) as total_mg, 
+                          COALESCE(SUM(CASE WHEN status = 'pending' THEN d3_qty ELSE 0 END), 0) as pending_d3, 
+                          COALESCE(SUM(CASE WHEN status = 'pending' THEN magnesium_qty ELSE 0 END), 0) as pending_mg 
+                          FROM recommendations WHERE doctor_id = %s''', (session['doctor_id'],))
+        stats = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        return render_template('stats.html', stats=stats)
+    except Exception as e:
+        return f"Σφάλμα: {e}"
 
 @app.route('/issue_recommendation', methods=['POST'])
 def issue_recommendation():
@@ -93,24 +107,33 @@ def issue_recommendation():
     doctor_id = session['doctor_id']
     d3_qty = int(request.form.get('d3_qty', 0)) if request.form.get('d3_active') == '1' else 0
     magnesium_qty = int(request.form.get('magnesium_qty', 0)) if request.form.get('magnesium_active') == '1' else 0
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute('INSERT INTO recommendations (doctor_id, diagnosis, d3_qty, magnesium_qty, special_notes, status) VALUES (%s,%s,%s,%s) RETURNING id',
-                   (doctor_id, request.form.get('diagnosis', ''), d3_qty, magnesium_qty, request.form.get('special_notes', ''), 'pending'))
-    conn.commit()
-    conn.close()
-    return "Συνταγογράφηση επιτυχής!"
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute('INSERT INTO recommendations (doctor_id, diagnosis, d3_qty, magnesium_qty, special_notes, status) VALUES (%s,%s,%s,%s) RETURNING id',
+                       (doctor_id, request.form.get('diagnosis', ''), d3_qty, magnesium_qty, request.form.get('special_notes', ''), 'pending'))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return "Συνταγογράφηση επιτυχής!"
+    except Exception as e:
+        print(f"Issue rec error: {e}")
+        return f"Σφάλμα: {e}"
 
 @app.route('/admin')
 def admin():
     if session.get('doctor_name') != 'Admin':
         return "Δεν έχετε δικαίωμα πρόσβασης!", 403
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute('SELECT d.id, d.name, SUM(r.d3_qty) as total_d3, SUM(r.magnesium_qty) as total_mg FROM doctors d LEFT JOIN recommendations r ON d.id = r.doctor_id GROUP BY d.id, d.name')
-    doctor_stats = cursor.fetchall()
-    conn.close()
-    return render_template('admin.html', doctor_stats=doctor_stats)
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute('SELECT d.id, d.name, COALESCE(SUM(r.d3_qty), 0) as total_d3, COALESCE(SUM(r.magnesium_qty), 0) as total_mg FROM doctors d LEFT JOIN recommendations r ON d.id = r.doctor_id GROUP BY d.id, d.name')
+        doctor_stats = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        return render_template('admin.html', doctor_stats=doctor_stats)
+    except Exception as e:
+        return f"Σφάλμα: {e}"
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 10000))
