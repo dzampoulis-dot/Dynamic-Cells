@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <title>Όλες οι Συνταγές</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; }
+        .container { max-width: 1200px; background: #fff; margin: 0 auto; padding: 30px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        h1 { margin-top: 0; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background: #333; color: white; }
+        .filters { background: #eef2f7; padding: 15px; border-radius: 6px; margin-bottom: 20px; }
+        .filters select { padding: 6px; margin-right: 10px; }
+        .btn { padding: 5px 12px; border: none; border-radius: 3px; cursor: pointer; font-size: 13px; }
+        .btn-paid { background: #28a745; color: white; }
+        .btn-paid:hover { background: #218838; }
+        .btn-pending { background: #ffc107; color: #000; }
+        .btn-pending:hover { background: #e0a800; }
+        .status-pending { background: #fff3cd; }
+        .status-paid { background: #d4edda; }
+        .link { color: #2563eb; text-decoration: none; }
+        .link:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>ΟΛΕΣ ΟΙ ΣΥΝΤΑΓΕΣ</h1>
+    
+    <div class="filters">
+        <form method="GET" action="/admin/recommendations" style="display: inline;">
+            <label>Κατάσταση: </label>
+            <select name="status" onchange="this.form.submit()">
+                <option value="all" {% if status_filter == 'all' %}selected{% endif %}>Όλες</option>
+                <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Εκκρεμείς</option>
+                <option value="paid" {% if status_filter == 'paid' %}selected{% endif %}>Πληρωμένες</option>
+            </select>
+            
+            <label>Ιατρός: </label>
+            <select name="doctor_id" onchange="this.form.submit()">
+                <option value="all">Όλοι</option>
+                {% for doc in doctors %}
+                <option value="{{ doc.id }}" {% if doctor_filter == doc.id|string %}selected{% endif %}>{{ doc.name }}</option>
+                {% endfor %}
+            </select>
+        </form>
+    </div>
+
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Ημερομηνία</th>
+            <th>Ιατρός</th>
+            <th>Διάγνωση</th>
+            <th>D3</th>
+            <th>Mg</th>
+            <th>Κατάσταση</th>
+            <th>Ενέργεια</th>
+        </tr>
+        {% for rec in recommendations %}
+        <tr class="{% if rec.status == 'pending' %}status-pending{% else %}status-paid{% endif %}">
+            <td>{{ rec.id }}</td>
+            <td>{{ rec.created_at.strftime('%d/%m/%Y %H:%M') if rec.created_at else '-' }}</td>
+            <td>{{ rec.doctor_name }}<br><small>{{ rec.specialty }}</small></td>
+            <td>{{ rec.diagnosis or '-' }}</td>
+            <td>{{ rec.d3_qty }} τεμ.</td>
+            <td>{{ rec.magnesium_qty }} τεμ.</td>
+            <td>
+                {% if rec.status == 'pending' %}
+                    <span style="color: #856404; font-weight: bold;">ΕΚΚΡΕΜΕΙ</span>
+                {% else %}
+                    <span style="color: #155724; font-weight: bold;">ΠΛΗΡΩΜΕ
