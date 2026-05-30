@@ -21,24 +21,28 @@ h1{color:#1f2937;border-bottom:3px solid #2563eb;padding-bottom:10px;margin-top:
 <body>
 <div class="container">
 <h1>Τα Στατιστικά μου</h1>
+
 <div class="stat-box total">
 <h3>ΣΥΝΟΛΙΚΑ</h3>
-<div class="stat-row"><span>DYNAMIC CELLS D3 + K2:</span><strong>{{ stats.total_d3 }} τεμ.</strong></div>
-<div class="stat-row"><span>DYNAMIC CELLS MAGNESIUM + B6:</span><strong>{{ stats.total_mg }} τεμ.</strong></div>
-<div class="stat-row"><span>Σύνολο Συνταγών:</span><strong>{{ stats.total_recs }}</strong></div>
+<div class="stat-row"><span>DYNAMIC CELLS D3 + K2:</span><strong>{{ stats.total_d3 | default(0) }} τεμ.</strong></div>
+<div class="stat-row"><span>DYNAMIC CELLS MAGNESIUM + B6:</span><strong>{{ stats.total_mg | default(0) }} τεμ.</strong></div>
+<div class="stat-row"><span>Σύνολο Συνταγών:</span><strong>{{ stats.total_recs | default(0) }}</strong></div>
 </div>
+
 <div class="stat-box pending">
 <h3>ΕΝΕΡΓΕΣ - ΠΡΟΣ ΕΚΚΑΘΑΡΙΣΗ</h3>
-<div class="stat-row"><span>DYNAMIC CELLS D3 + K2:</span><strong>{{ stats.pending_d3 }} τεμ.</strong></div>
-<div class="stat-row"><span>DYNAMIC CELLS MAGNESIUM + B6:</span><strong>{{ stats.pending_mg }} τεμ.</strong></div>
-<div class="stat-row"><span>Σύνολο Ενεργών Συνταγών:</span><strong>{{ stats.pending_recs }}</strong></div>
+<div class="stat-row"><span>DYNAMIC CELLS D3 + K2:</span><strong>{{ stats.pending_d3 | default(0) }} τεμ.</strong></div>
+<div class="stat-row"><span>DYNAMIC CELLS MAGNESIUM + B6:</span><strong>{{ stats.pending_mg | default(0) }} τεμ.</strong></div>
+<div class="stat-row"><span>Σύνολο Ενεργών Συνταγών:</span><strong>{{ stats.pending_recs | default(0) }}</strong></div>
 </div>
+
 <div class="stat-box paid">
 <h3>ΕΚΚΑΘΑΡΙΣΜΕΝΕΣ</h3>
-<div class="stat-row"><span>DYNAMIC CELLS D3 + K2:</span><strong>{{ stats.paid_d3 }} τεμ.</strong></div>
-<div class="stat-row"><span>DYNAMIC CELLS MAGNESIUM + B6:</span><strong>{{ stats.paid_mg }} τεμ.</strong></div>
-<div class="stat-row"><span>Σύνολο Εκκαθαρισμένων Συνταγών:</span><strong>{{ stats.paid_recs }}</strong></div>
+<div class="stat-row"><span>DYNAMIC CELLS D3 + K2:</span><strong>{{ stats.paid_d3 | default(0) }} τεμ.</strong></div>
+<div class="stat-row"><span>DYNAMIC CELLS MAGNESIUM + B6:</span><strong>{{ stats.paid_mg | default(0) }} τεμ.</strong></div>
+<div class="stat-row"><span>Σύνολο Εκκαθαρισμένων Συνταγών:</span><strong>{{ stats.paid_recs | default(0) }}</strong></div>
 </div>
+
 <a href="/dashboard" class="btn">← Επιστροφή στο Dashboard</a>
 </div>
 </body>
