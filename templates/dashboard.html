@@ -27,11 +27,10 @@
 
 <div class="container">
     <div class="top-links">
-        {% if doctor.name == 'Admin' %}
-            <a href="/admin" class="link-stats">Πίνακας Διαχείρισης</a>
-        {% else %}
-            <a href="/logout" class="link-stats">Αποσύνδεση</a>
+        {% if doctor.username == 'admin' %}
+            <a href="/admin" class="link-stats">Πίνακας Διαχείρισης</a> | 
         {% endif %}
+        <a href="/logout" class="link-stats">Αποσύνδεση</a>
     </div>
 
     <h2>ΝΕΑ ΙΑΤΡΙΚΗ ΑΓΩΓΗ</h2>
