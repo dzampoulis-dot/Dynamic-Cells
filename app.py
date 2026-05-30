@@ -80,7 +80,7 @@ def register():
         conn = get_db_connection()
         cursor = conn.cursor()
         try:
-            cursor.execute('INSERT INTO doctors (name, specialty, address, phone, username, password) VALUES (%s,%s,%s,%s,%s,%s) RETURNING id',
+            cursor.execute('INSERT INTO doctors (name, specialty, address, phone, username, password) VALUES (%s,%s,%s,%s) RETURNING id',
                            (name, specialty, address, phone, username, password))
             session['doctor_id'] = cursor.fetchone()['id']
             session['doctor_name'] = name
@@ -143,16 +143,15 @@ def my_stats():
         COALESCE(SUM(magnesium_qty), 0) as total_mg,
         COALESCE(SUM(CASE WHEN status = 'pending' THEN d3_qty ELSE 0 END), 0) as pending_d3,
         COALESCE(SUM(CASE WHEN status = 'pending' THEN magnesium_qty ELSE 0 END), 0) as pending_mg,
+        COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_recs,
         COALESCE(SUM(CASE WHEN status = 'paid' THEN d3_qty ELSE 0 END), 0) as paid_d3,
-        COALESCE(SUM(CASE WHEN status = 'paid' THEN magnesium_qty ELSE 0 END), 0) as paid_mg
+        COALESCE(SUM(CASE WHEN status = 'paid' THEN magnesium_qty ELSE 0 END), 0) as paid_mg,
+        COUNT(CASE WHEN status = 'paid' THEN 1 END) as paid_recs
         FROM recommendations WHERE doctor_id = %s''', (session['doctor_id'],))
     stats = cursor.fetchone()
-    
-    cursor.execute('''SELECT * FROM recommendations WHERE doctor_id = %s ORDER BY created_at DESC LIMIT 100''', (session['doctor_id'],))
-    recs = cursor.fetchall()
     conn.close()
     
-    return render_template('my_stats.html', stats=stats, recs=recs)
+    return render_template('my_stats.html', stats=stats)
 
 @app.route('/admin')
 def admin():
