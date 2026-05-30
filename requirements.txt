@@ -1,4 +1,4 @@
-flask
-psycopg2-binary
-sqlalchemy
-gunicorn
+flask==3.0.3
+psycopg2-binary==2.9.9
+gunicorn==23.0.0
+werkzeug==3.0.4
