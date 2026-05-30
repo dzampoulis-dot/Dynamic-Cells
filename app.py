@@ -129,11 +129,12 @@ def print_prescription(rec_id):
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute('SELECT r.*, d.name as doctor_name FROM recommendations r JOIN doctors d ON r.doctor_id = d.id WHERE r.id = %s', (rec_id,))
+        cursor.execute('SELECT r.*, d.name as doctor_name, d.specialty, d.address, d.phone FROM recommendations r JOIN doctors d ON r.doctor_id = d.id WHERE r.id = %s', (rec_id,))
         rec = cursor.fetchone()
         cursor.close()
         conn.close()
-        return render_template('print.html', rec=rec)
+        # Περνάμε το rec τόσο ως 'rec' όσο και ως 'doctor' για να μην βγάζει το σφάλμα
+        return render_template('print.html', rec=rec, doctor=rec)
     except Exception as e:
         print(f"Print error: {e}", file=sys.stderr)
         return f"Σφάλμα εκτύπωσης: {e}"
