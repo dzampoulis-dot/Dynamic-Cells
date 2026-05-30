@@ -6,7 +6,8 @@ import os
 app = Flask(__name__, template_folder='templates')
 app.secret_key = os.environ.get('SECRET_KEY', 'dynamic_cells_123')
 
-DATABASE_URL = os.environ.get('DATABASE_URL')
+# ΒΑΛΕ ΕΔΩ ΤΟ URL ΑΠΕΥΘΕΙΑΣ - ΤΕΛΟΣ ΤΑ ENV
+DATABASE_URL = "postgresql://postgres.lwxbuotfkpdlqvsuslkx:DynamicCells434@aws-0-eu-central-1.pooler.supabase.com:6543/postgres?sslmode=require&options=project%3Dlwxbuotfkpdlqvsuslkx"
 
 def get_db_connection():
     return psycopg2.connect(DATABASE_URL, cursor_factory=DictCursor)
@@ -110,7 +111,7 @@ def issue_recommendation():
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute('INSERT INTO recommendations (doctor_id, diagnosis, d3_qty, magnesium_qty, special_notes, status) VALUES (%s,%s,%s,%s) RETURNING id',
+        cursor.execute('INSERT INTO recommendations (doctor_id, diagnosis, d3_qty, magnesium_qty, special_notes, status) VALUES (%s,%s,%s,%s,%s,%s)',
                        (doctor_id, request.form.get('diagnosis', ''), d3_qty, magnesium_qty, request.form.get('special_notes', ''), 'pending'))
         conn.commit()
         cursor.close()
