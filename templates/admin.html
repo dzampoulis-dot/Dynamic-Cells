@@ -1,155 +1,188 @@
-<!DOCTYPE html>
-<html lang="el">
-<head>
-    <meta charset="UTF-8">
-    <title>Admin Dashboard - Dynamic Cells</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f6f9;
-            margin: 0;
-            padding: 20px;
-        }
-        .container {
-            max-width: 1100px;
-            margin: 0 auto;
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-        h1, h2 {
-            color: #222;
-        }
-        .stats-boxes {
-            display: flex;
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-        .stat-box {
-            flex: 1;
-            background: #eef1f6;
-            padding: 15px;
-            border-radius: 6px;
-            text-align: center;
-            border-left: 5px solid #222;
-        }
-        .stat-box.total { border-left-color: #27ae60; }
-        .stat-box h3 { margin: 0 0 10px 0; font-size: 14px; color: #555; text-transform: uppercase; }
-        .stat-box p { margin: 0; font-size: 24px; font-weight: bold; color: #222; }
+from flask import Flask, render_template, request, redirect, session, url_for
+import psycopg2
+from psycopg2.extras import DictCursor
+import os
+from werkzeug.security import generate_password_hash, check_password_hash
+from datetime import datetime
+
+app = Flask(__name__, template_folder='templates')
+app.secret_key = os.environ.get('SECRET_KEY', 'dev-key-change-this')
+
+DATABASE_URL = os.environ.get('DATABASE_URL')
+
+def get_db_connection():
+    # Η Supabase ΘΕΛΕΙ SSL αλλιώς πετάει OperationalError
+    if 'sslmode' not in DATABASE_URL:
+        conn_str = DATABASE_URL + "?sslmode=require"
+    else:
+        conn_str = DATABASE_URL
+    return psycopg2.connect(conn_str, cursor_factory=DictCursor)
+
+def init_db():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('''CREATE TABLE IF NOT EXISTS doctors (
+        id SERIAL PRIMARY KEY, 
+        name TEXT, 
+        specialty TEXT, 
+        address TEXT, 
+        phone TEXT, 
+        username TEXT UNIQUE, 
+        password TEXT
+    )''')
+    cursor.execute('''CREATE TABLE IF NOT EXISTS recommendations (
+        id SERIAL PRIMARY KEY, 
+        doctor_id INTEGER REFERENCES doctors(id), 
+        diagnosis TEXT, 
+        d3_qty INTEGER DEFAULT 0, 
+        magnesium_qty INTEGER DEFAULT 0, 
+        special_notes TEXT, 
+        status TEXT DEFAULT 'pending',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )''')
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+try:
+    init_db()
+except Exception as e:
+    print(f"DB init error: {e}")
+
+@app.route('/')
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute('SELECT * FROM doctors WHERE username = %s', (username,))
+        doctor = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        if doctor and check_password_hash(doctor['password'], password):
+            session['doctor_id'] = doctor['id']
+            session['doctor_name'] = doctor['name']
+            return redirect(url_for('dashboard'))
+        return "Λάθος στοιχεία!"
+    return render_template('login.html')
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        name = request.form['name']
+        specialty = request.form['specialty']
+        address = request.form['address']
+        phone = request.form['phone']
+        username = request.form['username']
+        password = generate_password_hash(request.form['password'])
         
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-        }
-        th {
-            background-color: #222;
-            color: white;
-            padding: 12px;
-            text-align: left;
-        }
-        td {
-            padding: 12px;
-            border-bottom: 1px solid #ddd;
-        }
-        tr:hover {
-            background-color: #f9f9f9;
-        }
-        .btn-clear {
-            background-color: #27ae60;
-            color: white;
-            border: none;
-            padding: 8px 14px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 13px;
-            transition: background 0.2s;
-        }
-        .btn-clear:hover {
-            background-color: #219653;
-        }
-        .status-paid {
-            color: #777;
-            font-style: italic;
-            font-size: 13px;
-        }
-        .sub-info {
-            color: #666;
-            font-size: 12px;
-            margin-top: 3px;
-            display: block;
-        }
-    </style>
-</head>
-<body>
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        try:
+            cursor.execute('INSERT INTO doctors (name, specialty, address, phone, username, password) VALUES (%s,%s,%s,%s,%s,%s) RETURNING id',
+                           (name, specialty, address, phone, username, password))
+            session['doctor_id'] = cursor.fetchone()['id']
+            session['doctor_name'] = name
+            conn.commit()
+            cursor.close()
+            conn.close()
+            return redirect(url_for('dashboard'))
+        except psycopg2.IntegrityError:
+            conn.rollback()
+            conn.close()
+            return "Το username υπάρχει ήδη!"
+    return render_template('register.html')
 
-<div class="container">
-    <h1>Διαχειριστικό Πάνελ (Admin)</h1>
-    <p>Καλωσήρθες στην κεντρική διαχείριση του <strong>Dynamic Cells</strong>.</p>
+@app.route('/dashboard')
+def dashboard():
+    if 'doctor_id' not in session: 
+        return redirect(url_for('login'))
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM doctors WHERE id = %s', (session['doctor_id'],))
+    doctor = cursor.fetchone()
+    conn.close()
+    return render_template('dashboard.html', doctor=doctor)
+
+@app.route('/issue_recommendation', methods=['POST'])
+def issue_recommendation():
+    if 'doctor_id' not in session: 
+        return redirect(url_for('login'))
+    doctor_id = session['doctor_id']
+    d3_qty = int(request.form.get('d3_qty', 0)) if request.form.get('d3_active') == '1' else 0
+    magnesium_qty = int(request.form.get('magnesium_qty', 0)) if request.form.get('magnesium_active') == '1' else 0
     
-    <div class="stats-boxes">
-        <div class="stat-box">
-            <h3>Συνταγογραφήσεις</h3>
-            <p>{{ total_recs }}</p>
-        </div>
-        <div class="stat-box total">
-            <h3>Συνολικά D3 (Τεμ.)</h3>
-            <p>{{ total_d3 }}</p>
-        </div>
-        <div class="stat-box total">
-            <h3>Συνολικά Μαγνήσια (Τεμ.)</h3>
-            <p>{{ total_mg }}</p>
-        </div>
-    </div>
-
-    <h2>Στατιστικά & Εκκαθαρίσεις Ανά Γιατρό</h2>
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('''INSERT INTO recommendations 
+        (doctor_id, diagnosis, d3_qty, magnesium_qty, special_notes, status) 
+        VALUES (%s,%s,%s,%s,%s,%s) RETURNING id''',
+        (doctor_id, request.form.get('diagnosis', ''), d3_qty, magnesium_qty, 
+         request.form.get('special_notes', ''), 'pending'))
     
-    <table>
-        <thead>
-            <tr>
-                <th>Γιατρός</th>
-                <th>Ειδικότητα</th>
-                <th style="color: #ffcc00;">Προς Πληρωμή (Εκκρεμή)</th>
-                <th style="color: #5cb85c;">Ιστορικό (Συνολικά)</th>
-                <th style="text-align: center;">Ενέργεια</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for doc in doctor_stats %}
-            {% set pending_total = (doc['pending_d3'] or 0) + (doc['pending_mg'] or 0) %}
-            {% set total_all = (doc['total_d3'] or 0) + (doc['total_mg'] or 0) %}
-            <tr>
-                <td style="font-weight: bold; color: #000;">{{ doc['name'] }}</td>
-                <td>{{ doc['specialty'] }}</td>
-                
-                <td style="color: #d9534f; font-weight: bold;">
-                    {{ pending_total }} τεμ.
-                    <span class="sub-info">D3: {{ doc['pending_d3'] or 0 }} | Mg: {{ doc['pending_mg'] or 0 }}</span>
-                </td>
-                
-                <td style="color: #27ae60; font-weight: bold;">
-                    {{ total_all }} τεμ.
-                    <span class="sub-info" style="color: #777;">D3: {{ doc['total_d3'] or 0 }} | Mg: {{ doc['total_mg'] or 0 }}</span>
-                </td>
-                
-                <td style="text-align: center;">
-                    {% if pending_total > 0 %}
-                    <form action="/admin/clear/{{ doc['id'] }}" method="POST" onsubmit="return confirm('Επιβεβαίωση πληρωμής προμήθειας για τον γιατρό {{ doc['name'] }}; Τα εκκρεμή τεμάχια θα μηδενιστούν.');">
-                        <button type="submit" class="btn-clear">
-                            Clear & Μηδενισμός
-                        </button>
-                    </form>
-                    {% else %}
-                    <span class="status-paid">✔ Εξοφλημένος</span>
-                    {% endif %}
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
+    rec_id = cursor.fetchone()['id']
+    conn.commit()
+    conn.close()
+    
+    # Εδώ θα έκανες render το PDF template. Για τώρα redirect.
+    return f"Συνταγογράφηση #{rec_id} επιτυχής! <a href='/dashboard'>Επιστροφή</a>"
 
-</body>
-</html>
+@app.route('/admin')
+def admin():
+    if session.get('doctor_name') != 'Admin':
+        return "Δεν έχετε δικαίωμα πρόσβασης!", 403
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # Συνολικά stats
+    cursor.execute('''SELECT 
+        COUNT(*) as total_recs,
+        COALESCE(SUM(d3_qty), 0) as total_d3,
+        COALESCE(SUM(magnesium_qty), 0) as total_mg
+        FROM recommendations''')
+    totals = cursor.fetchone()
+    
+    # Stats ανά γιατρό
+    cursor.execute('''SELECT 
+        d.id, d.name, d.specialty,
+        COALESCE(SUM(r.d3_qty), 0) as total_d3,
+        COALESCE(SUM(r.magnesium_qty), 0) as total_mg,
+        COALESCE(SUM(CASE WHEN r.status = 'pending' THEN r.d3_qty ELSE 0 END), 0) as pending_d3,
+        COALESCE(SUM(CASE WHEN r.status = 'pending' THEN r.magnesium_qty ELSE 0 END), 0) as pending_mg
+        FROM doctors d 
+        LEFT JOIN recommendations r ON d.id = r.doctor_id 
+        GROUP BY d.id, d.name, d.specialty
+        ORDER BY d.name''')
+    doctor_stats = cursor.fetchall()
+    conn.close()
+    
+    return render_template('admin.html', 
+        doctor_stats=doctor_stats,
+        total_recs=totals['total_recs'],
+        total_d3=totals['total_d3'],
+        total_mg=totals['total_mg']
+    )
+
+@app.route('/admin/clear/<int:doctor_id>', methods=['POST'])
+def admin_clear(doctor_id):
+    if session.get('doctor_name') != 'Admin':
+        return "Δεν έχετε δικαίωμα πρόσβασης!", 403
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE recommendations SET status = 'paid' WHERE doctor_id = %s AND status = 'pending'", (doctor_id,))
+    conn.commit()
+    conn.close()
+    return redirect(url_for('admin'))
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('login'))
+
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 10000))
+    app.run(host='0.0.0.0', port=port)
