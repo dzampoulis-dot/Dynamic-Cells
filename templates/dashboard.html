@@ -8,6 +8,9 @@
         .container { max-width: 800px; background: #fff; margin: 0 auto; padding: 30px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
         h2, h3 { margin-top: 0; color: #000; text-transform: uppercase; }
         .doctor-info { background: #eef2f7; padding: 15px; border-radius: 6px; margin-bottom: 25px; font-size: 15px; border-left: 4px solid #333; }
+        .top-links { text-align: right; margin-bottom: 15px; }
+        .link-stats { color: #2563eb; text-decoration: none; font-size: 14px; }
+        .link-stats:hover { text-decoration: underline; }
         .form-group { margin-bottom: 20px; }
         label { font-weight: bold; display: block; margin-bottom: 8px; text-transform: uppercase; font-size: 13px; }
         input[type="text"], select, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 15px; }
@@ -17,14 +20,16 @@
         .brand-text { font-weight: normal; text-transform: uppercase; }
         .btn-submit { background: #28a745; color: white; border: none; padding: 12px 25px; font-size: 16px; font-weight: bold; border-radius: 4px; cursor: pointer; text-transform: uppercase; width: 100%; margin-top: 20px; }
         .btn-submit:hover { background: #218838; }
-        .btn-stats { background: #2563eb; color: white; border: none; padding: 12px 25px; font-size: 16px; font-weight: bold; border-radius: 4px; cursor: pointer; text-transform: uppercase; width: 100%; margin-top: 10px; text-decoration: none; display: block; text-align: center; }
-        .btn-stats:hover { background: #1d4ed8; }
         .qty-input { width: 70px !important; display: inline-block; text-align: center; margin-left: 5px; }
     </style>
 </head>
 <body>
 
 <div class="container">
+    <div class="top-links">
+        <a href="/my_stats" class="link-stats">Τα Στατιστικά μου</a>
+    </div>
+
     <h2>ΝΕΑ ΙΑΤΡΙΚΗ ΑΓΩΓΗ</h2>
     
     <div class="doctor-info">
@@ -69,8 +74,6 @@
 
         <button type="submit" class="btn-submit">Έκδοση Εντύπου & Εκτύπωση</button>
     </form>
-
-    <a href="/my_stats" class="btn-stats">Τα Στατιστικά μου</a>
 </div>
 
 <script>
