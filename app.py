@@ -56,7 +56,7 @@ def register():
         try:
             conn = get_db_connection()
             cursor = conn.cursor()
-            cursor.execute('INSERT INTO doctors (name, specialty, address, phone, username, password) VALUES (%s,%s,%s,%s) RETURNING id',
+            cursor.execute('INSERT INTO doctors (name, specialty, address, phone, username, password) VALUES (%s,%s,%s,%s,%s,%s) RETURNING id',
                            (request.form['name'], request.form['specialty'], request.form['address'], request.form['phone'], request.form['username'], request.form['password']))
             session['doctor_id'] = cursor.fetchone()['id']
             session['doctor_name'] = request.form['name']
@@ -118,7 +118,7 @@ def issue_recommendation():
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute('INSERT INTO recommendations (doctor_id, diagnosis, d3_qty, magnesium_qty, special_notes, status) VALUES (%s,%s,%s,%s) RETURNING id',
+        cursor.execute('INSERT INTO recommendations (doctor_id, diagnosis, d3_qty, magnesium_qty, special_notes, status) VALUES (%s,%s,%s,%s,%s,%s) RETURNING id',
                        (doctor_id, request.form.get('diagnosis', ''), d3_qty, magnesium_qty, request.form.get('special_notes', ''), 'pending'))
         new_id = cursor.fetchone()['id']
         conn.commit()
