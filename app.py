@@ -4,7 +4,7 @@ from psycopg2.extras import DictCursor
 import os
 
 app = Flask(__name__, template_folder='templates')
-app.secret_key = 'dynamic_cells_123'
+app.secret_key = os.environ.get('SECRET_KEY', 'dynamic_cells_123')
 
 DATABASE_URL = os.environ.get('DATABASE_URL')
 
@@ -20,10 +20,7 @@ def init_db():
     cursor.close()
     conn.close()
 
-try:
-    init_db()
-except Exception as e:
-    print(f"Error initializing database: {e}")
+# ΣΒΗΣΤΗΚΕ το try: init_db() από εδώ - έσπαγε το deploy
 
 @app.route('/')
 @app.route('/login', methods=['GET', 'POST'])
@@ -52,7 +49,7 @@ def register():
         conn = get_db_connection()
         cursor = conn.cursor()
         try:
-            cursor.execute('INSERT INTO doctors (name, specialty, address, phone, username, password) VALUES (%s,%s,%s,%s,%s,%s) RETURNING id',
+            cursor.execute('INSERT INTO doctors (name, specialty, address, phone, username, password) VALUES (%s,%s,%s,%s) RETURNING id',
                            (name, specialty, address, phone, username, password))
             session['doctor_id'] = cursor.fetchone()['id']
             session['doctor_name'] = name
@@ -94,7 +91,7 @@ def issue_recommendation():
     magnesium_qty = int(request.form.get('magnesium_qty', 0)) if request.form.get('magnesium_active') == '1' else 0
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute('INSERT INTO recommendations (doctor_id, diagnosis, d3_qty, magnesium_qty, special_notes, status) VALUES (%s,%s,%s,%s,%s,%s) RETURNING id',
+    cursor.execute('INSERT INTO recommendations (doctor_id, diagnosis, d3_qty, magnesium_qty, special_notes, status) VALUES (%s,%s,%s,%s) RETURNING id',
                    (doctor_id, request.form.get('diagnosis', ''), d3_qty, magnesium_qty, request.form.get('special_notes', ''), 'pending'))
     conn.commit()
     conn.close()
