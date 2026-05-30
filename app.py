@@ -63,6 +63,7 @@ def login():
         if doctor and check_password_hash(doctor['password'], password):
             session['doctor_id'] = doctor['id']
             session['doctor_name'] = doctor['name']
+            session['username'] = doctor['username']  # ΑΛΛΑΓΗ 1: Αποθηκεύουμε και το username
             return redirect(url_for('dashboard'))
         return "Λάθος στοιχεία!"
     return render_template('login.html')
@@ -80,10 +81,11 @@ def register():
         conn = get_db_connection()
         cursor = conn.cursor()
         try:
-            cursor.execute('INSERT INTO doctors (name, specialty, address, phone, username, password) VALUES (%s,%s,%s,%s) RETURNING id',
+            cursor.execute('INSERT INTO doctors (name, specialty, address, phone, username, password) VALUES (%s,%s,%s,%s,%s,%s) RETURNING id',
                            (name, specialty, address, phone, username, password))
             session['doctor_id'] = cursor.fetchone()['id']
             session['doctor_name'] = name
+            session['username'] = username  # ΑΛΛΑΓΗ 2: Αποθηκεύουμε και το username
             conn.commit()
             cursor.close()
             conn.close()
@@ -117,7 +119,7 @@ def issue_recommendation():
     cursor = conn.cursor()
     cursor.execute('''INSERT INTO recommendations 
         (doctor_id, diagnosis, d3_qty, magnesium_qty, special_notes, status) 
-        VALUES (%s,%s,%s,%s) RETURNING id''',
+        VALUES (%s,%s,%s,%s,%s,%s) RETURNING id''',
         (doctor_id, request.form.get('diagnosis', ''), d3_qty, magnesium_qty, 
          request.form.get('special_notes', ''), 'pending'))
     
@@ -132,7 +134,7 @@ def my_stats():
     if 'doctor_id' not in session: 
         return redirect(url_for('login'))
     
-    if session.get('doctor_name') == 'Admin':
+    if session.get('username') == 'admin':  # ΑΛΛΑΓΗ 3: Έλεγχος με username
         return redirect(url_for('admin'))
     
     conn = get_db_connection()
@@ -155,7 +157,7 @@ def my_stats():
 
 @app.route('/admin')
 def admin():
-    if session.get('doctor_name') != 'Admin':
+    if session.get('username') != 'admin':  # ΑΛΛΑΓΗ 4: Έλεγχος με username
         return "Δεν έχετε δικαίωμα πρόσβασης!", 403
     
     conn = get_db_connection()
@@ -183,7 +185,7 @@ def admin():
         COALESCE(SUM(CASE WHEN r.status = 'paid' THEN r.magnesium_qty ELSE 0 END), 0) as paid_mg
         FROM doctors d 
         LEFT JOIN recommendations r ON d.id = r.doctor_id 
-        WHERE d.name != 'Admin'
+        WHERE d.username != 'admin'
         GROUP BY d.id, d.name, d.specialty
         ORDER BY total_recs DESC''')
     doctor_stats = cursor.fetchall()
@@ -193,7 +195,7 @@ def admin():
 
 @app.route('/admin/recommendations')
 def admin_recommendations():
-    if session.get('doctor_name') != 'Admin':
+    if session.get('username') != 'admin':  # ΑΛΛΑΓΗ 5: Έλεγχος με username
         return "Δεν έχετε δικαίωμα πρόσβασης!", 403
     
     status_filter = request.args.get('status', 'all')
@@ -222,7 +224,7 @@ def admin_recommendations():
     cursor.execute(query, tuple(params))
     recommendations = cursor.fetchall()
     
-    cursor.execute('SELECT id, name FROM doctors WHERE name != %s ORDER BY name', ('Admin',))
+    cursor.execute('SELECT id, name FROM doctors WHERE username != %s ORDER BY name', ('admin',))
     doctors = cursor.fetchall()
     
     conn.close()
@@ -234,7 +236,7 @@ def admin_recommendations():
 
 @app.route('/admin/update_status/<int:rec_id>/<status>', methods=['POST'])
 def update_status(rec_id, status):
-    if session.get('doctor_name') != 'Admin':
+    if session.get('username') != 'admin':  # ΑΛΛΑΓΗ 6: Έλεγχος με username
         return "Δεν έχετε δικαίωμα πρόσβασης!", 403
     if status not in ['pending', 'paid']:
         return "Λάθος status", 400
@@ -248,7 +250,7 @@ def update_status(rec_id, status):
 
 @app.route('/admin/clear/<int:doctor_id>', methods=['POST'])
 def admin_clear(doctor_id):
-    if session.get('doctor_name') != 'Admin':
+    if session.get('username') != 'admin':  # ΑΛΛΑΓΗ 7: Έλεγχος με username
         return "Δεν έχετε δικαίωμα πρόσβασης!", 403
     
     conn = get_db_connection()
