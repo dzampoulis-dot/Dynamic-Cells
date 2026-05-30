@@ -75,13 +75,12 @@ def register():
         address = request.form['address']
         phone = request.form['phone']
         username = request.form['username'].lower()
-        
         password = generate_password_hash(request.form['password'])
         
         conn = get_db_connection()
         cursor = conn.cursor()
         try:
-            cursor.execute('INSERT INTO doctors (name, specialty, address, phone, username, password) VALUES (%s,%s,%s,%s) RETURNING id',
+            cursor.execute('INSERT INTO doctors (name, specialty, address, phone, username, password) VALUES (%s,%s,%s,%s,%s,%s) RETURNING id',
                            (name, specialty, address, phone, username, password))
             session['doctor_id'] = cursor.fetchone()['id']
             session['doctor_name'] = name
@@ -118,7 +117,7 @@ def issue_recommendation():
     cursor = conn.cursor()
     cursor.execute('''INSERT INTO recommendations 
         (doctor_id, diagnosis, d3_qty, magnesium_qty, special_notes, status) 
-        VALUES (%s,%s,%s,%s) RETURNING id''',
+        VALUES (%s,%s,%s,%s,%s,%s) RETURNING id''',
         (doctor_id, request.form.get('diagnosis', ''), d3_qty, magnesium_qty, 
          request.form.get('special_notes', ''), 'pending'))
     
