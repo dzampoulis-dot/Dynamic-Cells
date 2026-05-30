@@ -117,7 +117,7 @@ def issue_recommendation():
     cursor = conn.cursor()
     cursor.execute('''INSERT INTO recommendations 
         (doctor_id, diagnosis, d3_qty, magnesium_qty, special_notes, status) 
-        VALUES (%s,%s,%s,%s,%s,%s) RETURNING id''',
+        VALUES (%s,%s,%s,%s) RETURNING id''',
         (doctor_id, request.form.get('diagnosis', ''), d3_qty, magnesium_qty, 
          request.form.get('special_notes', ''), 'pending'))
     
@@ -126,6 +126,33 @@ def issue_recommendation():
     conn.close()
     
     return f"Συνταγογράφηση #{rec_id} επιτυχής! <a href='/dashboard'>Επιστροφή</a>"
+
+@app.route('/my_stats')
+def my_stats():
+    if 'doctor_id' not in session: 
+        return redirect(url_for('login'))
+    
+    if session.get('doctor_name') == 'Admin':
+        return redirect(url_for('admin'))
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('''SELECT 
+        COUNT(*) as total_recs,
+        COALESCE(SUM(d3_qty), 0) as total_d3,
+        COALESCE(SUM(magnesium_qty), 0) as total_mg,
+        COALESCE(SUM(CASE WHEN status = 'pending' THEN d3_qty ELSE 0 END), 0) as pending_d3,
+        COALESCE(SUM(CASE WHEN status = 'pending' THEN magnesium_qty ELSE 0 END), 0) as pending_mg,
+        COALESCE(SUM(CASE WHEN status = 'paid' THEN d3_qty ELSE 0 END), 0) as paid_d3,
+        COALESCE(SUM(CASE WHEN status = 'paid' THEN magnesium_qty ELSE 0 END), 0) as paid_mg
+        FROM recommendations WHERE doctor_id = %s''', (session['doctor_id'],))
+    stats = cursor.fetchone()
+    
+    cursor.execute('''SELECT * FROM recommendations WHERE doctor_id = %s ORDER BY created_at DESC LIMIT 100''', (session['doctor_id'],))
+    recs = cursor.fetchall()
+    conn.close()
+    
+    return render_template('my_stats.html', stats=stats, recs=recs)
 
 @app.route('/admin')
 def admin():
