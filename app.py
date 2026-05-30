@@ -7,6 +7,7 @@ import sys
 app = Flask(__name__, template_folder='templates')
 app.secret_key = os.environ.get('SECRET_KEY', 'dynamic_cells_123')
 
+# ΔΙΑΒΑΖΕΙ ΑΠΟ RENDER ENVIRONMENT - ΟΧΙ HARDCODED
 DATABASE_URL = os.environ.get('DATABASE_URL')
 if not DATABASE_URL:
     raise ValueError("DATABASE_URL environment variable is not set! Check Render Environment")
@@ -102,7 +103,6 @@ def my_stats():
         print(f"Stats error: {e}", file=sys.stderr)
         return f"Σφάλμα: {e}"
 
-# --- ΠΡΟΣΘΗΚΗ ΓΙΑ ΕΚΤΥΠΩΣΗ ---
 @app.route('/issue_recommendation', methods=['POST'])
 def issue_recommendation():
     if 'doctor_id' not in session: return redirect('/login')
@@ -135,8 +135,8 @@ def print_prescription(rec_id):
         conn.close()
         return render_template('print.html', rec=rec)
     except Exception as e:
+        print(f"Print error: {e}", file=sys.stderr)
         return f"Σφάλμα εκτύπωσης: {e}"
-# ------------------------------
 
 @app.route('/admin')
 def admin():
