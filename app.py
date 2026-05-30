@@ -48,20 +48,19 @@ def register():
         phone = request.form['phone']
         username = request.form['username']
         password = request.form['password']
-        conn = get_db_connection()
-        cursor = conn.cursor()
         try:
+            conn = get_db_connection()
+            cursor = conn.cursor()
             cursor.execute('INSERT INTO doctors (name, specialty, address, phone, username, password) VALUES (%s,%s,%s,%s,%s,%s) RETURNING id',
                            (name, specialty, address, phone, username, password))
             session['doctor_id'] = cursor.fetchone()['id']
             session['doctor_name'] = name
             conn.commit()
+            cursor.close()
+            conn.close()
         except Exception as e:
             print(f"Register error: {e}")
-            conn.rollback()
-            conn.close()
             return f"Σφάλμα εγγραφής: {e}"
-        conn.close()
         return redirect('/dashboard')
     return render_template('register.html')
 
@@ -96,7 +95,7 @@ def issue_recommendation():
     magnesium_qty = int(request.form.get('magnesium_qty', 0)) if request.form.get('magnesium_active') == '1' else 0
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute('INSERT INTO recommendations (doctor_id, diagnosis, d3_qty, magnesium_qty, special_notes, status) VALUES (%s,%s,%s,%s,%s,%s) RETURNING id',
+    cursor.execute('INSERT INTO recommendations (doctor_id, diagnosis, d3_qty, magnesium_qty, special_notes, status) VALUES (%s,%s,%s,%s) RETURNING id',
                    (doctor_id, request.form.get('diagnosis', ''), d3_qty, magnesium_qty, request.form.get('special_notes', ''), 'pending'))
     conn.commit()
     conn.close()
