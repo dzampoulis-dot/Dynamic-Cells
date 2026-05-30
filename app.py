@@ -76,8 +76,6 @@ def register():
         phone = request.form['phone']
         username = request.form['username'].lower()
         
-        # ΤΟ ΜΠΛΟΚΑΡΙΣΜΑ ΕΙΝΑΙ ΣΒΗΣΜΕΝΟ ΓΙΑ ΝΑ ΦΤΙΑΞΕΙΣ ΤΟΝ ADMIN
-        
         password = generate_password_hash(request.form['password'])
         
         conn = get_db_connection()
