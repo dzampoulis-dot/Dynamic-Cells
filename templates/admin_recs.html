@@ -35,11 +35,7 @@
         <tr class="{% if rec.status == 'pending' %}status-pending{% else %}status-paid{% endif %}">
             <td>{{ rec.id }}</td>
             <td>
-                {% if rec.created_at %}
-                    {{ rec.created_at.strftime('%d/%m/%Y %H:%M') }}
-                {% else %}
-                    -
-                {% endif %}
+                {{ rec.created_at.strftime('%d/%m/%Y %H:%M') if rec.created_at is not none else '-' }}
             </td>
             <td>
                 {{ rec.doctor_name or '-' }}<br>
