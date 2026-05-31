@@ -81,8 +81,11 @@ def register():
         conn = get_db_connection()
         cursor = conn.cursor()
         try:
-            cursor.execute('INSERT INTO doctors (name, specialty, address, phone, username, password) VALUES (%s,%s,%s,%s) RETURNING id',
-                           (name, specialty, address, phone, username, password))
+            # ΔΙΟΡΘΩΣΗ: 6 πεδία, 6 %s
+            cursor.execute('''INSERT INTO doctors 
+                (name, specialty, address, phone, username, password) 
+                VALUES (%s, %s, %s, %s, %s, %s) RETURNING id''',
+                (name, specialty, address, phone, username, password))
             session['doctor_id'] = cursor.fetchone()['id']
             session['doctor_name'] = name
             session['username'] = username
@@ -121,7 +124,6 @@ def issue_recommendation():
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    # ΔΙΟΡΘΩΣΗ: 6 πεδία, 6 values
     cursor.execute('''INSERT INTO recommendations 
         (doctor_id, diagnosis, d3_qty, magnesium_qty, special_notes, status) 
         VALUES (%s, %s, %s, %s, %s, %s) RETURNING id''',
@@ -139,11 +141,9 @@ def issue_recommendation():
     current_date = now.strftime('%d/%m/%Y')
     current_time = now.strftime('%H:%M')
     
-    # 1 τεμάχιο = 30 μέρες
     d3_days = d3_qty * 30
     magnesium_days = magnesium_qty * 30
     
-    # ΔΙΟΡΘΩΣΗ: Επιστρέφει το template εκτύπωσης
     return render_template('print_rec.html', 
                          serial=rec_id,
                          doctor=doctor,
@@ -274,6 +274,51 @@ def update_status(rec_id, status):
     conn.commit()
     conn.close()
     return redirect(request.referrer or url_for('admin_recommendations'))
+
+@app.route('/admin/print/<int:rec_id>')
+def admin_print_rec(rec_id):
+    if session.get('username') != 'admin':
+        return "Δεν έχετε δικαίωμα πρόσβασης!", 403
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT r.*, d.name, d.specialty, d.address, d.phone 
+        FROM recommendations r 
+        JOIN doctors d ON r.doctor_id = d.id 
+        WHERE r.id = %s
+    ''', (rec_id,))
+    rec = cursor.fetchone()
+    conn.close()
+    
+    if not rec:
+        return "Η συνταγή δεν βρέθηκε", 404
+    
+    now = datetime.now()
+    current_date = now.strftime('%d/%m/%Y')
+    current_time = now.strftime('%H:%M')
+    
+    d3_days = rec['d3_qty'] * 30
+    magnesium_days = rec['magnesium_qty'] * 30
+    
+    doctor = {
+        'name': rec['name'],
+        'specialty': rec['specialty'],
+        'address': rec['address'],
+        'phone': rec['phone']
+    }
+    
+    return render_template('print_rec.html', 
+                         serial=rec['id'],
+                         doctor=doctor,
+                         diagnosis=rec['diagnosis'],
+                         d3_qty=rec['d3_qty'],
+                         magnesium_qty=rec['magnesium_qty'],
+                         d3_days=d3_days,
+                         magnesium_days=magnesium_days,
+                         special_notes=rec['special_notes'],
+                         current_date=current_date,
+                         current_time=current_time)
 
 @app.route('/admin/clear/<int:doctor_id>', methods=['POST'])
 def admin_clear(doctor_id):
