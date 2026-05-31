@@ -130,6 +130,31 @@ def confirm_print(rec_id):
     conn.commit(); conn.close()
     return jsonify({'ok': True})
 
+@app.route('/my_stats')
+def my_stats():
+    if 'doctor_id' not in session: return redirect(url_for('login'))
+    doctor_id = session['doctor_id']
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('''SELECT 
+        COUNT(*) as total_recs,
+        COALESCE(SUM(d3_qty), 0) as total_d3,
+        COALESCE(SUM(magnesium_qty), 0) as total_mg,
+        COALESCE(SUM(CASE WHEN status = 'pending' THEN d3_qty ELSE 0 END), 0) as pending_d3,
+        COALESCE(SUM(CASE WHEN status = 'pending' THEN magnesium_qty ELSE 0 END), 0) as pending_mg,
+        COALESCE(SUM(CASE WHEN status = 'paid' THEN d3_qty ELSE 0 END), 0) as paid_d3,
+        COALESCE(SUM(CASE WHEN status = 'paid' THEN magnesium_qty ELSE 0 END), 0) as paid_mg,
+        COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_recs,
+        COUNT(CASE WHEN status = 'paid' THEN 1 END) as paid_recs
+        FROM recommendations WHERE doctor_id = %s AND status != 'draft' ''', (doctor_id,))
+    stats = cursor.fetchone()
+    cursor.execute('''SELECT id, diagnosis, d3_qty, magnesium_qty, status, created_at 
+        FROM recommendations WHERE doctor_id = %s AND status != 'draft'
+        ORDER BY id DESC LIMIT 200''', (doctor_id,))
+    recs = cursor.fetchall()
+    conn.close()
+    return render_template('my_stats.html', stats=stats, recs=recs)
+
 @app.route('/admin')
 def admin():
     if session.get('username') != 'admin': return "Δεν έχετε δικαίωμα πρόσβασης!", 403
