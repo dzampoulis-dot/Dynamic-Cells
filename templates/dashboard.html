@@ -9,7 +9,7 @@
         h2, h3 { margin-top: 0; color: #000; text-transform: uppercase; }
         .doctor-info { background: #eef2f7; padding: 15px; border-radius: 6px; margin-bottom: 25px; font-size: 15px; border-left: 4px solid #333; }
         .top-links { text-align: right; margin-bottom: 15px; }
-        .link-stats { color: #2563eb; text-decoration: none; font-size: 14px; }
+        .link-stats { color: #2563eb; text-decoration: none; font-size: 14px; margin-left: 15px; }
         .link-stats:hover { text-decoration: underline; }
         .form-group { margin-bottom: 20px; }
         label { font-weight: bold; display: block; margin-bottom: 8px; text-transform: uppercase; font-size: 13px; }
@@ -28,7 +28,9 @@
 <div class="container">
     <div class="top-links">
         {% if doctor.username == 'admin' %}
-            <a href="/admin" class="link-stats">Πίνακας Διαχείρισης</a> | 
+            <a href="/admin" class="link-stats">Πίνακας Διαχείρισης</a>
+        {% else %}
+            <a href="/my_stats" class="link-stats">Τα Στατιστικά μου</a>
         {% endif %}
         <a href="/logout" class="link-stats">Αποσύνδεση</a>
     </div>
