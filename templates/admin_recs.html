@@ -12,7 +12,9 @@
         th { background: #333; color: white; }
         .filters { background: #eef2f7; padding: 15px; border-radius: 6px; margin-bottom: 20px; }
         .filters select { padding: 6px; margin-right: 10px; }
-        .btn { padding: 5px 12px; border: none; border-radius: 3px; cursor: pointer; font-size: 13px; }
+        .btn { padding: 5px 12px; border: none; border-radius: 3px; cursor: pointer; font-size: 13px; text-decoration: none; display: inline-block; margin: 2px; }
+        .btn-print { background: #6366f1; color: white; }
+        .btn-print:hover { background: #4f46e5; }
         .btn-paid { background: #28a745; color: white; }
         .btn-paid:hover { background: #218838; }
         .btn-pending { background: #ffc107; color: #000; }
@@ -34,7 +36,7 @@
             <select name="status" onchange="this.form.submit()">
                 <option value="all" {% if status_filter == 'all' %}selected{% endif %}>Όλες</option>
                 <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Εκκρεμείς</option>
-                <option value="paid" {% if status_filter == 'paid' %}selected{% endif %}>Πληρωμένες</option>
+                <option value="paid" {% if status_filter == 'paid' %}selected{% endif %}>Εκκαθαρισμένες</option>
             </select>
             
             <label>Ιατρός: </label>
@@ -70,4 +72,28 @@
                 {% if rec.status == 'pending' %}
                     <span style="color: #856404; font-weight: bold;">ΕΚΚΡΕΜΕΙ</span>
                 {% else %}
-                    <span style="color: #155724; font-weight: bold;">ΠΛΗΡΩΜΕ
+                    <span style="color: #155724; font-weight: bold;">ΕΚΚΑΘΑΡΙΣΤΗΚΕ</span>
+                {% endif %}
+            </td>
+            <td>
+                <a href="/admin/print/{{ rec.id }}" target="_blank" class="btn btn-print">🖨️ Εκτύπωση</a>
+                {% if rec.status == 'pending' %}
+                <form method="POST" action="/admin/update_status/{{ rec.id }}/paid" style="display: inline;">
+                    <button type="submit" class="btn btn-paid">Πληρώθηκε</button>
+                </form>
+                {% else %}
+                <form method="POST" action="/admin/update_status/{{ rec.id }}/pending" style="display: inline;">
+                    <button type="submit" class="btn btn-pending">Ακύρωση</button>
+                </form>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <br>
+    <a href="/admin" class="link">← Πίσω στον Πίνακα Διαχείρισης</a>
+</div>
+
+</body>
+</html>
