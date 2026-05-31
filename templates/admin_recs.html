@@ -6,7 +6,6 @@
             <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Εκκρεμείς</option>
             <option value="paid" {% if status_filter == 'paid' %}selected{% endif %}>Εκκαθαρισμένες</option>
         </select>
-        
         <label>Ιατρός: </label>
         <select name="doctor_id" onchange="this.form.submit()">
             <option value="all">Όλοι</option>
@@ -32,45 +31,24 @@
     </thead>
     <tbody>
         {% for rec in recommendations %}
-        <tr class="{% if rec.status == 'pending' %}status-pending{% else %}status-paid{% endif %}">
+        <tr>
             <td>{{ rec.id }}</td>
-            <td>
-                {{ rec.created_at.strftime('%d/%m/%Y %H:%M') if rec.created_at is not none else '-' }}
-            </td>
-            <td>
-                {{ rec.doctor_name or '-' }}<br>
-                <small>{{ rec.specialty or '' }}</small>
-            </td>
+            <td>{{ rec.created_at.strftime('%d/%m/%Y %H:%M') if rec.created_at else '-' }}</td>
+            <td>{{ rec.doctor_name or '-' }}</td>
             <td>{{ rec.diagnosis or '-' }}</td>
-            <td>{{ rec.d3_qty or 0 }} τεμ.</td>
-            <td>{{ rec.magnesium_qty or 0 }} τεμ.</td>
+            <td>{{ rec.d3_qty or 0 }}</td>
+            <td>{{ rec.magnesium_qty or 0 }}</td>
+            <td>{{ 'ΕΚΚΡΕΜΕΙ' if rec.status == 'pending' else 'ΕΚΚΑΘΑΡΙΣΤΗΚΕ' }}</td>
             <td>
-                {% if rec.status == 'pending' %}
-                    <span style="color: #856404; font-weight: bold;">ΕΚΚΡΕΜΕΙ</span>
-                {% else %}
-                    <span style="color: #155724; font-weight: bold;">ΕΚΚΑΘΑΡΙΣΤΗΚΕ</span>
-                {% endif %}
-            </td>
-            <td>
-                <a href="/admin/print/{{ rec.id }}" target="_blank" class="btn btn-print">🖨 Εκτύπωση</a>
+                <a href="/admin/print/{{ rec.id }}" target="_blank">🖨 Εκτύπωση</a>
                 {% if rec.status == 'pending' %}
                 <form method="POST" action="/admin/update_status/{{ rec.id }}/paid" style="display: inline;">
-                    <button type="submit" class="btn btn-paid">Πληρώθηκε</button>
-                </form>
-                {% else %}
-                <form method="POST" action="/admin/update_status/{{ rec.id }}/pending" style="display: inline;">
-                    <button type="submit" class="btn btn-pending">Ακύρωση</button>
+                    <button type="submit">Πληρώθηκε</button>
                 </form>
                 {% endif %}
             </td>
-        </tr>
-        {% else %}
-        <tr>
-            <td colspan="8" class="empty">Δεν βρέθηκαν συνταγές με αυτά τα φίλτρα.</td>
         </tr>
         {% endfor %}
     </tbody>
 </table>
-
-<br>
-<a href="/admin" class="link">← Πίσω στον Πίνακα Διαχείρισης</a>
+<a href="/admin">← Πίσω</a>
