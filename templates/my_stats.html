@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <title>Οι Συνταγές μου</title>
+    <style>
+        body{font-family:Arial,sans-serif;background:#f3f4f6;padding:20px;margin:0}
+        .container{max-width:1000px;margin:0 auto;background:white;padding:30px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
+        h1{color:#1f2937;border-bottom:3px solid #2563eb;padding-bottom:10px;margin-top:0}
+        .stat-box{background:#f9fafb;padding:15px 20px;margin:15px 0;border-left:4px solid #2563eb;border-radius:4px;display:flex;gap:30px;flex-wrap:wrap}
+        .stat-item{font-size:14px;color:#374151}
+        .stat-item strong{font-size:16px;color:#1f2937}
+        .pending-box{border-left-color:#f59e0b}
+        .paid-box{border-left-color:#10b981}
+        table{width:100%;border-collapse:collapse;margin-top:20px}
+        th,td{border:1px solid #ddd;padding:10px;text-align:left;font-size:14px}
+        th{background:#333;color:white}
+        .badge-pending{background:#fef3c7;color:#92400e;padding:3px 8px;border-radius:4px;font-size:12px;font-weight:bold}
+        .badge-paid{background:#d1fae5;color:#065f46;padding:3px 8px;border-radius:4px;font-size:12px;font-weight:bold}
+        .btn{display:inline-block;padding:10px 20px;background:#6b7280;color:white;text-decoration:none;border-radius:6px;margin-top:20px}
+        .btn:hover{background:#4b5563}
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Οι Συνταγές μου</h1>
+
+    <div class="stat-box">
+        <div class="stat-item">Σύνολο Συνταγών: <strong>{{ stats['total_recs'] or 0 }}</strong></div>
+        <div class="stat-item">D3 Σύνολο: <strong>{{ stats['total_d3'] or 0 }} τεμ.</strong></div>
+        <div class="stat-item">Magnesium Σύνολο: <strong>{{ stats['total_mg'] or 0 }} τεμ.</strong></div>
+    </div>
+    <div class="stat-box pending-box">
+        <div class="stat-item">Εκκρεμείς Συνταγές: <strong>{{ stats['pending_recs'] or 0 }}</strong></div>
+        <div class="stat-item">D3 Εκκρεμή: <strong>{{ stats['pending_d3'] or 0 }} τεμ.</strong></div>
+        <div class="stat-item">Magnesium Εκκρεμή: <strong>{{ stats['pending_mg'] or 0 }} τεμ.</strong></div>
+    </div>
+    <div class="stat-box paid-box">
+        <div class="stat-item">Εκκαθαρισμένες Συνταγές: <strong>{{ stats['paid_recs'] or 0 }}</strong></div>
+        <div class="stat-item">D3 Εκκαθαρισμένα: <strong>{{ stats['paid_d3'] or 0 }} τεμ.</strong></div>
+        <div class="stat-item">Magnesium Εκκαθαρισμένα: <strong>{{ stats['paid_mg'] or 0 }} τεμ.</strong></div>
+    </div>
+
+    <table>
+        <thead>
+            <tr><th>ID</th><th>Ημερομηνία</th><th>Διάγνωση</th><th>D3</th><th>Mg</th><th>Κατάσταση</th></tr>
+        </thead>
+        <tbody>
+            {% for rec in recs %}
+            <tr>
+                <td>{{ rec['id'] }}</td>
+                <td>{{ rec['created_at'].strftime('%d/%m/%Y %H:%M') if rec['created_at'] else '-' }}</td>
+                <td>{{ rec['diagnosis'] or '-' }}</td>
+                <td>{{ rec['d3_qty'] or 0 }}</td>
+                <td>{{ rec['magnesium_qty'] or 0 }}</td>
+                <td>
+                    {% if rec['status'] == 'pending' %}
+                    <span class="badge-pending">ΕΚΚΡΕΜΕΙ</span>
+                    {% else %}
+                    <span class="badge-paid">ΕΚΚΑΘΑΡΙΣΤΗΚΕ</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <a href="/dashboard" class="btn">← Επιστροφή στο Dashboard</a>
+</div>
+</body>
+</html>
