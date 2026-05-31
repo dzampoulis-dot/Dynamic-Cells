@@ -26,9 +26,7 @@ def init_db():
         diagnosis TEXT, d3_qty INTEGER DEFAULT 0, magnesium_qty INTEGER DEFAULT 0, 
         special_notes TEXT, status TEXT DEFAULT 'pending',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)''')
-    conn.commit()
-    cursor.close()
-    conn.close()
+    conn.commit(); cursor.close(); conn.close()
 
 try: init_db()
 except Exception as e: print(f"DB init error: {e}")
@@ -56,8 +54,7 @@ def register():
         conn = get_db_connection()
         cursor = conn.cursor()
         try:
-            cursor.execute('''INSERT INTO doctors (name, specialty, address, phone, username, password) 
-                VALUES (%s, %s, %s, %s, %s, %s) RETURNING id''', 
+            cursor.execute('INSERT INTO doctors (name, specialty, address, phone, username, password) VALUES (%s, %s, %s, %s, %s, %s)', 
                 (request.form['name'], request.form['specialty'], request.form['address'], 
                  request.form['phone'], request.form['username'].lower(), generate_password_hash(request.form['password'])))
             conn.commit()
@@ -92,28 +89,26 @@ def issue_recommendation():
 
 @app.route('/admin/recommendations')
 def admin_recommendations():
-    if session.get('username') != 'admin': return "Δεν έχετε δικαίωμα πρόσβασης!", 403
+    if session.get('username') != 'admin': return "Δεν έχετε δικαίωμα!", 403
     status_filter = request.args.get('status', 'all')
     doctor_filter = request.args.get('doctor_id', 'all')
     conn = get_db_connection()
     cursor = conn.cursor()
-    query = """SELECT r.id, r.diagnosis, r.d3_qty, r.magnesium_qty, r.status, r.created_at, 
-               d.name as doctor_name 
-               FROM recommendations r JOIN doctors d ON r.doctor_id = d.id WHERE 1=1"""
+    query = "SELECT r.*, d.name as doctor_name FROM recommendations r JOIN doctors d ON r.doctor_id = d.id WHERE 1=1"
     params = []
     if status_filter != 'all': query += ' AND r.status = %s'; params.append(status_filter)
     if doctor_filter != 'all': query += ' AND r.doctor_id = %s'; params.append(int(doctor_filter))
     query += ' ORDER BY r.created_at DESC'
     cursor.execute(query, tuple(params))
-    recommendations = cursor.fetchall()
+    recs = cursor.fetchall()
     cursor.execute('SELECT id, name FROM doctors WHERE username != %s', ('admin',))
-    doctors = cursor.fetchall()
+    docs = cursor.fetchall()
     conn.close()
-    return render_template('admin_recs.html', recommendations=recommendations, doctors=doctors, status_filter=status_filter, doctor_filter=doctor_filter)
+    return render_template('admin_recs.html', recommendations=recs, doctors=docs, status_filter=status_filter, doctor_filter=doctor_filter)
 
 @app.route('/admin/update_status/<int:rec_id>/<status>', methods=['POST'])
 def update_status(rec_id, status):
-    if session.get('username') != 'admin': return "Δεν έχετε δικαίωμα πρόσβασης!", 403
+    if session.get('username') != 'admin': return "Δεν έχετε δικαίωμα!", 403
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('UPDATE recommendations SET status = %s WHERE id = %s', (status, rec_id))
@@ -122,27 +117,26 @@ def update_status(rec_id, status):
 
 @app.route('/admin/print/<int:rec_id>')
 def admin_print_rec(rec_id):
-    if 'doctor_id' not in session and session.get('username') != 'admin': return redirect(url_for('login'))
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('SELECT r.*, d.name, d.specialty, d.address, d.phone FROM recommendations r JOIN doctors d ON r.doctor_id = d.id WHERE r.id = %s', (rec_id,))
-    rec = cursor.fetchone()
-    conn.close()
-    if not rec: return "Δεν βρέθηκε", 404
-    return render_template('print.html', serial=rec['id'], doctor=rec, diagnosis=rec.get('diagnosis', ''), 
-                           d3_qty=rec.get('d3_qty', 0), magnesium_qty=rec.get('magnesium_qty', 0), 
-                           d3_days=rec.get('d3_qty', 0)*30, magnesium_days=rec.get('magnesium_qty', 0)*30, 
-                           special_notes=rec.get('special_notes', ''), current_date=datetime.now().strftime('%d/%m/%Y'), 
-                           current_time=datetime.now().strftime('%H:%M'))
+    rec = cursor.fetchone(); conn.close()
+    return render_template('print.html', rec=rec)
 
 @app.route('/admin')
 def admin():
-    if session.get('username') != 'admin': return "Δεν έχετε δικαίωμα πρόσβασης!", 403
+    if session.get('username') != 'admin': return "Δεν έχετε δικαίωμα!", 403
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT COUNT(*), COALESCE(SUM(d3_qty),0), COALESCE(SUM(magnesium_qty),0), COALESCE(SUM(CASE WHEN status='pending' THEN d3_qty END),0), COALESCE(SUM(CASE WHEN status='pending' THEN magnesium_qty END),0), COALESCE(SUM(CASE WHEN status='paid' THEN d3_qty END),0), COALESCE(SUM(CASE WHEN status='paid' THEN magnesium_qty END),0) FROM recommendations")
+    cursor.execute("""SELECT COUNT(*) as total_recs, COALESCE(SUM(d3_qty),0) as total_d3, COALESCE(SUM(magnesium_qty),0) as total_mg,
+                      COALESCE(SUM(CASE WHEN status='pending' THEN d3_qty END),0) as pending_d3, COALESCE(SUM(CASE WHEN status='pending' THEN magnesium_qty END),0) as pending_mg,
+                      COALESCE(SUM(CASE WHEN status='paid' THEN d3_qty END),0) as paid_d3, COALESCE(SUM(CASE WHEN status='paid' THEN magnesium_qty END),0) as paid_mg
+                      FROM recommendations""")
     totals = cursor.fetchone()
-    cursor.execute("SELECT d.id, d.name, d.specialty, COUNT(r.id) as total_recs FROM doctors d LEFT JOIN recommendations r ON d.id = r.doctor_id WHERE d.username != 'admin' GROUP BY d.id, d.name, d.specialty")
+    cursor.execute("""SELECT d.name, d.specialty, COUNT(r.id) as total_recs, COALESCE(SUM(r.d3_qty),0) as total_d3, COALESCE(SUM(r.magnesium_qty),0) as total_mg,
+                      COALESCE(SUM(CASE WHEN r.status='pending' THEN r.d3_qty END),0) as pending_d3, COALESCE(SUM(CASE WHEN r.status='pending' THEN r.magnesium_qty END),0) as pending_mg,
+                      COALESCE(SUM(CASE WHEN r.status='paid' THEN r.d3_qty END),0) as paid_d3, COALESCE(SUM(CASE WHEN r.status='paid' THEN r.magnesium_qty END),0) as paid_mg
+                      FROM doctors d LEFT JOIN recommendations r ON d.id = r.doctor_id WHERE d.username != 'admin' GROUP BY d.id, d.name, d.specialty""")
     doctor_stats = cursor.fetchall()
     conn.close()
     return render_template('admin.html', doctor_stats=doctor_stats, totals=totals)
