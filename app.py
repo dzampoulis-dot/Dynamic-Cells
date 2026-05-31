@@ -144,7 +144,7 @@ def admin_recommendations():
     params = []
     if status_filter != 'all': query += ' AND r.status = %s'; params.append(status_filter)
     if doctor_filter != 'all': query += ' AND r.doctor_id = %s'; params.append(int(doctor_filter))
-    query += ' ORDER BY r.created_at DESC LIMIT 500'
+    query += ' ORDER BY r.id DESC LIMIT 500'
     cursor.execute(query, tuple(params))
     recommendations = cursor.fetchall()
     cursor.execute('SELECT id, name FROM doctors WHERE username != %s ORDER BY name', ('admin',))
@@ -169,7 +169,11 @@ def admin_print_rec(rec_id):
     cursor.execute('SELECT r.*, d.name, d.specialty, d.address, d.phone FROM recommendations r JOIN doctors d ON r.doctor_id = d.id WHERE r.id = %s', (rec_id,))
     rec = cursor.fetchone(); conn.close()
     if not rec: return "Η συνταγή δεν βρέθηκε", 404
-    return render_template('print.html', serial=rec['id'], doctor=rec, diagnosis=rec['diagnosis'], 
+    
+    # Διορθωμένο: δημιουργία dict για το template
+    doctor = {'name': rec['name'], 'specialty': rec['specialty'], 'address': rec['address'], 'phone': rec['phone']}
+    
+    return render_template('print.html', serial=rec['id'], doctor=doctor, diagnosis=rec['diagnosis'], 
                            d3_qty=rec['d3_qty'], magnesium_qty=rec['magnesium_qty'], d3_days=rec['d3_qty']*30, 
                            magnesium_days=rec['magnesium_qty']*30, special_notes=rec['special_notes'], 
                            current_date=datetime.now().strftime('%d/%m/%Y'), current_time=datetime.now().strftime('%H:%M'))
