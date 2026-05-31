@@ -10,8 +10,30 @@ app.secret_key = os.environ.get('SECRET_KEY', 'dev-key-change-this')
 DATABASE_URL = os.environ.get('DATABASE_URL')
 
 def get_db_connection():
+    if not DATABASE_URL: return None
     conn_str = DATABASE_URL if 'sslmode' in DATABASE_URL else DATABASE_URL + "?sslmode=require"
     return psycopg2.connect(conn_str, cursor_factory=DictCursor)
+
+def init_db():
+    conn = get_db_connection()
+    if not conn: return
+    cursor = conn.cursor()
+    cursor.execute('''CREATE TABLE IF NOT EXISTS doctors (
+        id SERIAL PRIMARY KEY, name TEXT, specialty TEXT, address TEXT, 
+        phone TEXT, username TEXT UNIQUE, password TEXT)''')
+    cursor.execute('''CREATE TABLE IF NOT EXISTS recommendations (
+        id SERIAL PRIMARY KEY, doctor_id INTEGER REFERENCES doctors(id), 
+        diagnosis TEXT, d3_qty INTEGER DEFAULT 0, magnesium_qty INTEGER DEFAULT 0, 
+        special_notes TEXT, status TEXT DEFAULT 'pending',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)''')
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+try:
+    init_db()
+except Exception as e:
+    print(f"DB init error: {e}")
 
 @app.route('/')
 @app.route('/login', methods=['GET', 'POST'])
@@ -81,14 +103,26 @@ def issue_recommendation():
 @app.route('/admin/recommendations')
 def admin_recommendations():
     if session.get('username') != 'admin': return "Δεν έχετε δικαίωμα πρόσβασης!", 403
+    status_filter = request.args.get('status', 'all')
+    doctor_filter = request.args.get('doctor_id', 'all')
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT r.*, d.name as doctor_name FROM recommendations r JOIN doctors d ON r.doctor_id = d.id ORDER BY r.created_at DESC")
+    query = """SELECT r.*, d.name as doctor_name, d.specialty 
+               FROM recommendations r JOIN doctors d ON r.doctor_id = d.id WHERE 1=1"""
+    params = []
+    if status_filter != 'all':
+        query += ' AND r.status = %s'
+        params.append(status_filter)
+    if doctor_filter != 'all':
+        query += ' AND r.doctor_id = %s'
+        params.append(int(doctor_filter))
+    query += ' ORDER BY r.created_at DESC'
+    cursor.execute(query, tuple(params))
     recommendations = cursor.fetchall()
     cursor.execute('SELECT id, name FROM doctors WHERE username != %s', ('admin',))
     doctors = cursor.fetchall()
     conn.close()
-    return render_template('admin_recs.html', recommendations=recommendations, doctors=doctors, status_filter='all', doctor_filter='all')
+    return render_template('admin_recs.html', recommendations=recommendations, doctors=doctors, status_filter=status_filter, doctor_filter=doctor_filter)
 
 @app.route('/admin/update_status/<int:rec_id>/<status>', methods=['POST'])
 def update_status(rec_id, status):
@@ -114,6 +148,18 @@ def admin_print_rec(rec_id):
                            d3_days=rec['d3_qty']*30, magnesium_days=rec['magnesium_qty']*30,
                            special_notes=rec['special_notes'], current_date=datetime.now().strftime('%d/%m/%Y'),
                            current_time=datetime.now().strftime('%H:%M'))
+
+@app.route('/admin')
+def admin():
+    if session.get('username') != 'admin': return "Δεν έχετε δικαίωμα πρόσβασης!", 403
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT COUNT(*), COALESCE(SUM(d3_qty),0), COALESCE(SUM(magnesium_qty),0), COALESCE(SUM(CASE WHEN status='pending' THEN d3_qty END),0), COALESCE(SUM(CASE WHEN status='pending' THEN magnesium_qty END),0), COALESCE(SUM(CASE WHEN status='paid' THEN d3_qty END),0), COALESCE(SUM(CASE WHEN status='paid' THEN magnesium_qty END),0) FROM recommendations")
+    totals = cursor.fetchone()
+    cursor.execute("SELECT d.id, d.name, d.specialty, COUNT(r.id) as total_recs FROM doctors d LEFT JOIN recommendations r ON d.id = r.doctor_id WHERE d.username != 'admin' GROUP BY d.id, d.name, d.specialty")
+    doctor_stats = cursor.fetchall()
+    conn.close()
+    return render_template('admin.html', doctor_stats=doctor_stats, totals=totals)
 
 @app.route('/logout')
 def logout():
