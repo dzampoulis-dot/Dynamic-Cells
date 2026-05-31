@@ -15,19 +15,9 @@
         </select>
     </form>
 </div>
-
 <table>
     <thead>
-        <tr>
-            <th>ID</th>
-            <th>Ημερομηνία</th>
-            <th>Ιατρός</th>
-            <th>Διάγνωση</th>
-            <th>D3</th>
-            <th>Mg</th>
-            <th>Κατάσταση</th>
-            <th>Ενέργεια</th>
-        </tr>
+        <tr><th>ID</th><th>Ημερομηνία</th><th>Ιατρός</th><th>Διάγνωση</th><th>D3</th><th>Mg</th><th>Κατάσταση</th><th>Ενέργεια</th></tr>
     </thead>
     <tbody>
         {% for rec in recommendations %}
@@ -43,7 +33,7 @@
                 <a href="/admin/print/{{ rec.id }}" target="_blank">🖨 Εκτύπωση</a>
                 {% if rec.status == 'pending' %}
                 <form method="POST" action="/admin/update_status/{{ rec.id }}/paid" style="display: inline;">
-                    <button type="submit" onclick="return confirm('Επιβεβαίωση πληρωμής;');">Πληρώθηκε</button>
+                    <button type="submit">Πληρώθηκε</button>
                 </form>
                 {% endif %}
             </td>
