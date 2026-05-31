@@ -43,7 +43,7 @@
                 <a href="/admin/print/{{ rec.id }}" target="_blank">🖨 Εκτύπωση</a>
                 {% if rec.status == 'pending' %}
                 <form method="POST" action="/admin/update_status/{{ rec.id }}/paid" style="display: inline;">
-                    <button type="submit">Πληρώθηκε</button>
+                    <button type="submit" onclick="return confirm('Επιβεβαίωση πληρωμής;');">Πληρώθηκε</button>
                 </form>
                 {% endif %}
             </td>
