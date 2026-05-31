@@ -40,17 +40,17 @@
         <tbody>
             {% for rec in recommendations %}
             <tr>
-                <td>{{ rec.id }}</td>
-                <td>{{ rec.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
-                <td>{{ rec.doctor_name }}</td>
-                <td>{{ rec.diagnosis }}</td>
-                <td>{{ rec.d3_qty }}</td>
-                <td>{{ rec.magnesium_qty }}</td>
-                <td>{{ 'ΕΚΚΡΕΜΕΙ' if rec.status == 'pending' else 'ΕΚΚΑΘΑΡΙΣΤΗΚΕ' }}</td>
+                <td>{{ rec['id'] }}</td>
+                <td>{{ rec['created_at'].strftime('%d/%m/%Y %H:%M') if rec['created_at'] else '-' }}</td>
+                <td>{{ rec['doctor_name'] }}</td>
+                <td>{{ rec['diagnosis'] }}</td>
+                <td>{{ rec['d3_qty'] or 0 }}</td>
+                <td>{{ rec['magnesium_qty'] or 0 }}</td>
+                <td>{{ 'ΕΚΚΡΕΜΕΙ' if rec['status'] == 'pending' else 'ΕΚΚΑΘΑΡΙΣΤΗΚΕ' }}</td>
                 <td>
-                    <a href="{{ url_for('admin_print_rec', rec_id=rec.id) }}" target="_blank">🖨 Εκτύπωση</a>
-                    {% if rec.status == 'pending' %}
-                    <form method="POST" action="{{ url_for('update_status', rec_id=rec.id, status='paid') }}" style="display: inline;">
+                    <a href="{{ url_for('admin_print_rec', rec_id=rec['id']) }}" target="_blank">🖨 Εκτύπωση</a>
+                    {% if rec['status'] == 'pending' %}
+                    <form method="POST" action="{{ url_for('update_status', rec_id=rec['id'], status='paid') }}" style="display: inline;">
                         <button type="submit" class="btn-paid">Πληρώθηκε</button>
                     </form>
                     {% endif %}
