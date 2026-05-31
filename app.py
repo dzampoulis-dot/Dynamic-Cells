@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, session, url_for
+from flask import Flask, render_template, request, redirect, session, url_for, jsonify
 import psycopg2
 from psycopg2.extras import DictCursor
 import os
@@ -29,6 +29,7 @@ def init_db():
         special_notes TEXT, status TEXT DEFAULT 'pending',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)''')
     cursor.execute('''UPDATE recommendations SET created_at = CURRENT_TIMESTAMP WHERE created_at IS NULL''')
+    cursor.execute('''DELETE FROM recommendations WHERE status = 'draft' ''')
     conn.commit()
     cursor.close()
     conn.close()
@@ -96,6 +97,10 @@ def issue_recommendation():
     doctor_id = session['doctor_id']
     d3_qty = int(request.form.get('d3_qty', 0)) if request.form.get('d3_active') == '1' else 0
     magnesium_qty = int(request.form.get('magnesium_qty', 0)) if request.form.get('magnesium_active') == '1' else 0
+    
+    if d3_qty == 0 and magnesium_qty == 0:
+        return redirect(url_for('dashboard'))
+    
     diagnosis = request.form.get('diagnosis', '')
     special_notes = request.form.get('special_notes', '')
     
@@ -103,7 +108,7 @@ def issue_recommendation():
     cursor = conn.cursor()
     cursor.execute('''INSERT INTO recommendations (doctor_id, diagnosis, d3_qty, magnesium_qty, special_notes, status) 
         VALUES (%s, %s, %s, %s, %s, %s) RETURNING id''',
-        (doctor_id, diagnosis, d3_qty, magnesium_qty, special_notes, 'pending'))
+        (doctor_id, diagnosis, d3_qty, magnesium_qty, special_notes, 'draft'))
     rec_id = cursor.fetchone()['id']
     cursor.execute('SELECT * FROM doctors WHERE id = %s', (doctor_id,))
     doctor = cursor.fetchone()
@@ -115,6 +120,16 @@ def issue_recommendation():
                            current_date=datetime.now().strftime('%d/%m/%Y'), 
                            current_time=datetime.now().strftime('%H:%M'))
 
+@app.route('/confirm_print/<int:rec_id>', methods=['POST'])
+def confirm_print(rec_id):
+    if 'doctor_id' not in session: return jsonify({'ok': False}), 403
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE recommendations SET status = 'pending' WHERE id = %s AND doctor_id = %s", 
+                   (rec_id, session['doctor_id']))
+    conn.commit(); conn.close()
+    return jsonify({'ok': True})
+
 @app.route('/admin')
 def admin():
     if session.get('username') != 'admin': return "Δεν έχετε δικαίωμα πρόσβασης!", 403
@@ -125,7 +140,7 @@ def admin():
                       COALESCE(SUM(CASE WHEN status = 'pending' THEN magnesium_qty ELSE 0 END), 0) as pending_mg,
                       COALESCE(SUM(CASE WHEN status = 'paid' THEN d3_qty ELSE 0 END), 0) as paid_d3,
                       COALESCE(SUM(CASE WHEN status = 'paid' THEN magnesium_qty ELSE 0 END), 0) as paid_mg
-                      FROM recommendations''')
+                      FROM recommendations WHERE status != 'draft' ''')
     totals = cursor.fetchone()
     cursor.execute('''SELECT d.id, d.name, d.specialty, COUNT(r.id) as total_recs,
                       COALESCE(SUM(r.d3_qty), 0) as total_d3,
@@ -134,7 +149,7 @@ def admin():
                       COALESCE(SUM(CASE WHEN r.status = 'pending' THEN r.magnesium_qty ELSE 0 END), 0) as pending_mg,
                       COALESCE(SUM(CASE WHEN r.status = 'paid' THEN r.d3_qty ELSE 0 END), 0) as paid_d3,
                       COALESCE(SUM(CASE WHEN r.status = 'paid' THEN r.magnesium_qty ELSE 0 END), 0) as paid_mg
-                      FROM doctors d LEFT JOIN recommendations r ON d.id = r.doctor_id 
+                      FROM doctors d LEFT JOIN recommendations r ON d.id = r.doctor_id AND r.status != 'draft'
                       WHERE d.username != 'admin' GROUP BY d.id, d.name, d.specialty ORDER BY total_recs DESC''')
     doctor_stats = cursor.fetchall()
     conn.close()
@@ -147,7 +162,10 @@ def admin_recommendations():
     doctor_filter = request.args.get('doctor_id', 'all')
     conn = get_db_connection()
     cursor = conn.cursor()
-    query = 'SELECT r.*, d.name as doctor_name, d.specialty FROM recommendations r JOIN doctors d ON r.doctor_id = d.id WHERE 1=1'
+    query = '''SELECT r.id, r.diagnosis, r.d3_qty, r.magnesium_qty, r.status, r.special_notes,
+                      r.created_at, d.name as doctor_name, d.specialty 
+               FROM recommendations r JOIN doctors d ON r.doctor_id = d.id 
+               WHERE r.status != 'draft' '''
     params = []
     if status_filter != 'all': query += ' AND r.status = %s'; params.append(status_filter)
     if doctor_filter != 'all': query += ' AND r.doctor_id = %s'; params.append(int(doctor_filter))
@@ -173,16 +191,15 @@ def admin_print_rec(rec_id):
     if session.get('username') != 'admin': return "Δεν έχετε δικαίωμα πρόσβασης!", 403
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute('SELECT r.*, d.name, d.specialty, d.address, d.phone FROM recommendations r JOIN doctors d ON r.doctor_id = d.id WHERE r.id = %s', (rec_id,))
+    cursor.execute('SELECT r.id, r.diagnosis, r.d3_qty, r.magnesium_qty, r.special_notes, d.name, d.specialty, d.address, d.phone FROM recommendations r JOIN doctors d ON r.doctor_id = d.id WHERE r.id = %s', (rec_id,))
     rec = cursor.fetchone(); conn.close()
     if not rec: return "Η συνταγή δεν βρέθηκε", 404
-    
     doctor = {'name': rec['name'], 'specialty': rec['specialty'], 'address': rec['address'], 'phone': rec['phone']}
-    
     return render_template('print.html', serial=rec['id'], doctor=doctor, diagnosis=rec['diagnosis'], 
                            d3_qty=rec['d3_qty'], magnesium_qty=rec['magnesium_qty'], d3_days=rec['d3_qty']*30, 
                            magnesium_days=rec['magnesium_qty']*30, special_notes=rec['special_notes'], 
-                           current_date=datetime.now().strftime('%d/%m/%Y'), current_time=datetime.now().strftime('%H:%M'))
+                           current_date=datetime.now().strftime('%d/%m/%Y'), current_time=datetime.now().strftime('%H:%M'),
+                           is_admin=True)
 
 @app.route('/logout')
 def logout():
