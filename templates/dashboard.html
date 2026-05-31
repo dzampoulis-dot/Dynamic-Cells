@@ -1,91 +1,7 @@
-<!DOCTYPE html>
-<html lang="el">
-<head>
-    <meta charset="UTF-8">
-    <title>Dashboard Ιατρού</title>
-    <style>
-        body { font-family: Arial, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; color: #333; }
-        .container { max-width: 800px; background: #fff; margin: 0 auto; padding: 30px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        h2, h3 { margin-top: 0; color: #000; text-transform: uppercase; }
-        .doctor-info { background: #eef2f7; padding: 15px; border-radius: 6px; margin-bottom: 25px; font-size: 15px; border-left: 4px solid #333; }
-        .top-links { text-align: right; margin-bottom: 15px; }
-        .link-stats { color: #2563eb; text-decoration: none; font-size: 14px; margin-left: 15px; }
-        .link-stats:hover { text-decoration: underline; }
-        .form-group { margin-bottom: 20px; }
-        label { font-weight: bold; display: block; margin-bottom: 8px; text-transform: uppercase; font-size: 13px; }
-        input[type="text"], select, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 15px; }
-        .product-card { background: #f9f9f9; border: 1px solid #ddd; border-left: 4px solid #333; padding: 15px; margin-bottom: 15px; border-radius: 4px; position: relative; }
-        .btn-remove { position: absolute; top: 10px; right: 10px; background: #eee; border: 1px solid #ccc; border-radius: 3px; cursor: pointer; padding: 2px 6px; font-size: 12px; }
-        .btn-remove:hover { background: #ddd; }
-        .brand-text { font-weight: normal; text-transform: uppercase; }
-        .btn-submit { background: #28a745; color: white; border: none; padding: 12px 25px; font-size: 16px; font-weight: bold; border-radius: 4px; cursor: pointer; text-transform: uppercase; width: 100%; margin-top: 20px; }
-        .btn-submit:hover { background: #218838; }
-        .qty-input { width: 70px !important; display: inline-block; text-align: center; margin-left: 5px; }
-    </style>
-</head>
-<body>
-
-<div class="container">
-    <div class="top-links">
-        {% if doctor.username == 'admin' %}
-            <a href="/admin" class="link-stats">Πίνακας Διαχείρισης</a>
-        {% else %}
-            <a href="/my_stats" class="link-stats">Τα Στατιστικά μου</a>
-        {% endif %}
-        <a href="/logout" class="link-stats">Αποσύνδεση</a>
-    </div>
-
-    <h2>ΝΕΑ ΙΑΤΡΙΚΗ ΑΓΩΓΗ</h2>
-    
-    <div class="doctor-info">
-        <strong>Ιατρός:</strong> {{ doctor.name }} | <strong>Ειδικότητα:</strong> {{ doctor.specialty }}
-    </div>
-
-    <form action="/issue_recommendation" method="POST">
-        <div class="form-group">
-            <label>Ένδειξη / Διάγνωση:</label>
-            <input type="text" name="diagnosis" placeholder="π.χ. ΧΑΜΗΛΗ D3, ΟΣΤΕΟΠΕΝΙΑ">
-        </div>
-
-        <div class="form-group">
-            <label>Προσθήκη Σκευάσματος:</label>
-            <select id="product-selector" onchange="addProduct()">
-                <option value="">-- Επιλέξτε προϊόν --</option>
-                <option value="d3">DYNAMIC CELLS D3 + K2</option>
-                <option value="magnesium">DYNAMIC CELLS MAGNESIUM BISGLYCINATE + B6</option>
-            </select>
-        </div>
-
-        <div id="card-d3" class="product-card" style="display: none;">
-            <button type="button" class="btn-remove" onclick="removeProduct('d3')">X</button>
-            <input type="hidden" id="active-d3" name="d3_active" value="0">
-            <p><strong>Δραστική:</strong> CHOLECALCIFEROL (VITAMIN D3) + K2</p>
-            <p><strong>Εμπορική:</strong> <span class="brand-text">DYNAMIC CELLS</span> D3 + K2</p>
-            <p><strong>Ποσότητα:</strong> <input type="number" name="d3_qty" value="1" min="1" class="qty-input"> τεμ.</p>
-        </div>
-
-        <div id="card-magnesium" class="product-card" style="display: none;">
-            <button type="button" class="btn-remove" onclick="removeProduct('magnesium')">X</button>
-            <input type="hidden" id="active-magnesium" name="magnesium_active" value="0">
-            <p><strong>Δραστική:</strong> MAGNESIUM BISGLYCINATE + B6</p>
-            <p><strong>Εμπορική:</strong> <span class="brand-text">DYNAMIC CELLS</span> MAGNESIUM + B6</p>
-            <p><strong>Ποσότητα:</strong> <input type="number" name="magnesium_qty" value="1" min="1" class="qty-input"> τεμ.</p>
-        </div>
-
-        <div class="form-group" style="margin-top: 25px;">
-            <label>ΕΙΔΙΚΕΣ ΟΔΗΓΙΕΣ ΙΑΤΡΟΥ:</label>
-            <textarea name="special_notes" rows="4" placeholder="Προσθέστε τυχόν επιπλέον οδηγίες για τον ασθενή..."></textarea>
-        </div>
-
-        <button type="submit" class="btn-submit">Έκδοση Εντύπου & Εκτύπωση</button>
-    </form>
-</div>
-
 <script>
 function addProduct() {
     var selector = document.getElementById('product-selector');
     var value = selector.value;
-    
     if (value === 'd3') {
         document.getElementById('card-d3').style.display = 'block';
         document.getElementById('active-d3').value = '1';
@@ -93,7 +9,6 @@ function addProduct() {
         document.getElementById('card-magnesium').style.display = 'block';
         document.getElementById('active-magnesium').value = '1';
     }
-    
     selector.value = '';
 }
 
@@ -106,7 +21,13 @@ function removeProduct(type) {
         document.getElementById('active-magnesium').value = '0';
     }
 }
-</script>
 
-</body>
-</html>
+document.querySelector('form').addEventListener('submit', function(e) {
+    var d3 = document.getElementById('active-d3').value;
+    var mg = document.getElementById('active-magnesium').value;
+    if (d3 === '0' && mg === '0') {
+        e.preventDefault();
+        alert('Παρακαλώ προσθέστε τουλάχιστον ένα σκεύασμα!');
+    }
+});
+</script>
