@@ -9,30 +9,49 @@
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
         th { background: #333; color: white; }
-        .filters { margin-bottom: 20px; }
+        .filters { margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 15px; align-items: flex-end; }
+        .filter-group { display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: bold; }
+        .filter-group select, .filter-group input { padding: 7px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
+        .btn-filter { padding: 8px 18px; background: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .btn-filter:hover { background: #1d4ed8; }
+        .btn-reset { padding: 8px 18px; background: #6b7280; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; text-decoration: none; }
         .btn-paid { background: #10b981; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
     </style>
 </head>
 <body>
 <div class="container">
     <h1>ΔΙΑΧΕΙΡΙΣΗ ΣΥΝΤΑΓΩΝ</h1>
-    <div class="filters">
-        <form method="GET" action="{{ url_for('admin_recommendations') }}">
-            <label>Κατάσταση: </label>
-            <select name="status" onchange="this.form.submit()">
-                <option value="all" {% if status_filter == 'all' %}selected{% endif %}>Όλες</option>
-                <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Εκκρεμείς</option>
-                <option value="paid" {% if status_filter == 'paid' %}selected{% endif %}>Εκκαθαρισμένες</option>
-            </select>
-            <label> Ιατρός: </label>
-            <select name="doctor_id" onchange="this.form.submit()">
-                <option value="all">Όλοι</option>
-                {% for doc in doctors %}
-                <option value="{{ doc.id }}" {% if doctor_filter|string == doc.id|string %}selected{% endif %}>{{ doc.name }}</option>
-                {% endfor %}
-            </select>
-        </form>
-    </div>
+    <form method="GET" action="{{ url_for('admin_recommendations') }}">
+        <div class="filters">
+            <div class="filter-group">
+                <label>Κατάσταση:</label>
+                <select name="status">
+                    <option value="all" {% if status_filter == 'all' %}selected{% endif %}>Όλες</option>
+                    <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Εκκρεμείς</option>
+                    <option value="paid" {% if status_filter == 'paid' %}selected{% endif %}>Εκκαθαρισμένες</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Ιατρός:</label>
+                <select name="doctor_id">
+                    <option value="all">Όλοι</option>
+                    {% for doc in doctors %}
+                    <option value="{{ doc.id }}" {% if doctor_filter|string == doc.id|string %}selected{% endif %}>{{ doc.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Από:</label>
+                <input type="date" name="date_from" value="{{ date_from }}">
+            </div>
+            <div class="filter-group">
+                <label>Έως:</label>
+                <input type="date" name="date_to" value="{{ date_to }}">
+            </div>
+            <button type="submit" class="btn-filter">Εφαρμογή</button>
+            <a href="{{ url_for('admin_recommendations') }}" class="btn-reset">Καθαρισμός</a>
+        </div>
+    </form>
     <table>
         <thead>
             <tr><th>ID</th><th>Ημερομηνία</th><th>Ιατρός</th><th>Διάγνωση</th><th>D3</th><th>Mg</th><th>Κατάσταση</th><th>Ενέργεια</th></tr>
