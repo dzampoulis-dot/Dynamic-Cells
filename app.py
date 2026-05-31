@@ -136,14 +136,15 @@ def update_status(rec_id, status):
 
 @app.route('/admin/print/<int:rec_id>')
 def admin_print_rec(rec_id):
-    if 'doctor_id' not in session: return redirect(url_for('login'))
+    if 'doctor_id' not in session and session.get('username') != 'admin': return redirect(url_for('login'))
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('SELECT r.*, d.name, d.specialty, d.address, d.phone FROM recommendations r JOIN doctors d ON r.doctor_id = d.id WHERE r.id = %s', (rec_id,))
     rec = cursor.fetchone()
     conn.close()
     if not rec: return "Δεν βρέθηκε", 404
-    return render_template('print_rec.html', serial=rec['id'], doctor=rec, diagnosis=rec['diagnosis'],
+    # Εδώ καλούμε το print.html όπως επιβεβαίωσες
+    return render_template('print.html', serial=rec['id'], doctor=rec, diagnosis=rec['diagnosis'],
                            d3_qty=rec['d3_qty'], magnesium_qty=rec['magnesium_qty'],
                            d3_days=rec['d3_qty']*30, magnesium_days=rec['magnesium_qty']*30,
                            special_notes=rec['special_notes'], current_date=datetime.now().strftime('%d/%m/%Y'),
