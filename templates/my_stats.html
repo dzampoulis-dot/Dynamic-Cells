@@ -12,6 +12,11 @@
         .stat-item strong{font-size:16px;color:#1f2937}
         .pending-box{border-left-color:#f59e0b}
         .paid-box{border-left-color:#10b981}
+        .filters{display:flex;flex-wrap:wrap;gap:15px;align-items:flex-end;margin-bottom:20px;background:#f9fafb;padding:15px;border-radius:6px}
+        .filter-group{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:bold}
+        .filter-group select, .filter-group input{padding:7px;border:1px solid #ccc;border-radius:4px;font-size:14px}
+        .btn-filter{padding:8px 18px;background:#2563eb;color:white;border:none;border-radius:4px;cursor:pointer;font-weight:bold}
+        .btn-reset{padding:8px 18px;background:#6b7280;color:white;border:none;border-radius:4px;cursor:pointer;font-weight:bold;text-decoration:none}
         table{width:100%;border-collapse:collapse;margin-top:20px}
         th,td{border:1px solid #ddd;padding:10px;text-align:left;font-size:14px}
         th{background:#333;color:white}
@@ -25,18 +30,41 @@
 <div class="container">
     <h1>Οι Συνταγές μου</h1>
 
+    <form method="GET" action="/my_stats">
+        <div class="filters">
+            <div class="filter-group">
+                <label>Κατάσταση:</label>
+                <select name="status">
+                    <option value="all" {% if status_filter == 'all' %}selected{% endif %}>Όλες</option>
+                    <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Εκκρεμείς</option>
+                    <option value="paid" {% if status_filter == 'paid' %}selected{% endif %}>Εκκαθαρισμένες</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Από:</label>
+                <input type="date" name="date_from" value="{{ date_from }}">
+            </div>
+            <div class="filter-group">
+                <label>Έως:</label>
+                <input type="date" name="date_to" value="{{ date_to }}">
+            </div>
+            <button type="submit" class="btn-filter">Εφαρμογή</button>
+            <a href="/my_stats" class="btn-reset">Καθαρισμός</a>
+        </div>
+    </form>
+
     <div class="stat-box">
         <div class="stat-item">Σύνολο Συνταγών: <strong>{{ stats['total_recs'] or 0 }}</strong></div>
         <div class="stat-item">D3 Σύνολο: <strong>{{ stats['total_d3'] or 0 }} τεμ.</strong></div>
         <div class="stat-item">Magnesium Σύνολο: <strong>{{ stats['total_mg'] or 0 }} τεμ.</strong></div>
     </div>
     <div class="stat-box pending-box">
-        <div class="stat-item">Εκκρεμείς Συνταγές: <strong>{{ stats['pending_recs'] or 0 }}</strong></div>
+        <div class="stat-item">Εκκρεμείς: <strong>{{ stats['pending_recs'] or 0 }}</strong></div>
         <div class="stat-item">D3 Εκκρεμή: <strong>{{ stats['pending_d3'] or 0 }} τεμ.</strong></div>
         <div class="stat-item">Magnesium Εκκρεμή: <strong>{{ stats['pending_mg'] or 0 }} τεμ.</strong></div>
     </div>
     <div class="stat-box paid-box">
-        <div class="stat-item">Εκκαθαρισμένες Συνταγές: <strong>{{ stats['paid_recs'] or 0 }}</strong></div>
+        <div class="stat-item">Εκκαθαρισμένες: <strong>{{ stats['paid_recs'] or 0 }}</strong></div>
         <div class="stat-item">D3 Εκκαθαρισμένα: <strong>{{ stats['paid_d3'] or 0 }} τεμ.</strong></div>
         <div class="stat-item">Magnesium Εκκαθαρισμένα: <strong>{{ stats['paid_mg'] or 0 }} τεμ.</strong></div>
     </div>
