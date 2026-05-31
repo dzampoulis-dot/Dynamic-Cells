@@ -134,9 +134,15 @@ def confirm_print(rec_id):
 def my_stats():
     if 'doctor_id' not in session: return redirect(url_for('login'))
     doctor_id = session['doctor_id']
+    status_filter = request.args.get('status', 'all')
+    date_from = request.args.get('date_from', '')
+    date_to = request.args.get('date_to', '')
+
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute('''SELECT 
+
+    # Stats query με φίλτρα
+    stats_query = '''SELECT 
         COUNT(*) as total_recs,
         COALESCE(SUM(d3_qty), 0) as total_d3,
         COALESCE(SUM(magnesium_qty), 0) as total_mg,
@@ -146,14 +152,27 @@ def my_stats():
         COALESCE(SUM(CASE WHEN status = 'paid' THEN magnesium_qty ELSE 0 END), 0) as paid_mg,
         COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_recs,
         COUNT(CASE WHEN status = 'paid' THEN 1 END) as paid_recs
-        FROM recommendations WHERE doctor_id = %s AND status != 'draft' ''', (doctor_id,))
+        FROM recommendations WHERE doctor_id = %s AND status != 'draft' '''
+    stats_params = [doctor_id]
+    if status_filter != 'all': stats_query += ' AND status = %s'; stats_params.append(status_filter)
+    if date_from: stats_query += ' AND created_at >= %s'; stats_params.append(date_from)
+    if date_to: stats_query += ' AND created_at <= %s'; stats_params.append(date_to + ' 23:59:59')
+    cursor.execute(stats_query, tuple(stats_params))
     stats = cursor.fetchone()
-    cursor.execute('''SELECT id, diagnosis, d3_qty, magnesium_qty, status, created_at 
-        FROM recommendations WHERE doctor_id = %s AND status != 'draft'
-        ORDER BY id DESC LIMIT 200''', (doctor_id,))
+
+    # Recs query με φίλτρα
+    recs_query = '''SELECT id, diagnosis, d3_qty, magnesium_qty, status, created_at 
+        FROM recommendations WHERE doctor_id = %s AND status != 'draft' '''
+    recs_params = [doctor_id]
+    if status_filter != 'all': recs_query += ' AND status = %s'; recs_params.append(status_filter)
+    if date_from: recs_query += ' AND created_at >= %s'; recs_params.append(date_from)
+    if date_to: recs_query += ' AND created_at <= %s'; recs_params.append(date_to + ' 23:59:59')
+    recs_query += ' ORDER BY id DESC LIMIT 200'
+    cursor.execute(recs_query, tuple(recs_params))
     recs = cursor.fetchall()
     conn.close()
-    return render_template('my_stats.html', stats=stats, recs=recs)
+    return render_template('my_stats.html', stats=stats, recs=recs, 
+                           status_filter=status_filter, date_from=date_from, date_to=date_to)
 
 @app.route('/admin')
 def admin():
@@ -185,6 +204,8 @@ def admin_recommendations():
     if session.get('username') != 'admin': return "Δεν έχετε δικαίωμα πρόσβασης!", 403
     status_filter = request.args.get('status', 'all')
     doctor_filter = request.args.get('doctor_id', 'all')
+    date_from = request.args.get('date_from', '')
+    date_to = request.args.get('date_to', '')
     conn = get_db_connection()
     cursor = conn.cursor()
     query = '''SELECT r.id, r.diagnosis, r.d3_qty, r.magnesium_qty, r.status, r.special_notes,
@@ -194,13 +215,17 @@ def admin_recommendations():
     params = []
     if status_filter != 'all': query += ' AND r.status = %s'; params.append(status_filter)
     if doctor_filter != 'all': query += ' AND r.doctor_id = %s'; params.append(int(doctor_filter))
+    if date_from: query += ' AND r.created_at >= %s'; params.append(date_from)
+    if date_to: query += ' AND r.created_at <= %s'; params.append(date_to + ' 23:59:59')
     query += ' ORDER BY r.id DESC LIMIT 500'
     cursor.execute(query, tuple(params))
     recommendations = cursor.fetchall()
     cursor.execute('SELECT id, name FROM doctors WHERE username != %s ORDER BY name', ('admin',))
     doctors = cursor.fetchall()
     conn.close()
-    return render_template('admin_recs.html', recommendations=recommendations, doctors=doctors, status_filter=status_filter, doctor_filter=doctor_filter)
+    return render_template('admin_recs.html', recommendations=recommendations, doctors=doctors,
+                           status_filter=status_filter, doctor_filter=doctor_filter,
+                           date_from=date_from, date_to=date_to)
 
 @app.route('/admin/update_status/<int:rec_id>/<status>', methods=['POST'])
 def update_status(rec_id, status):
