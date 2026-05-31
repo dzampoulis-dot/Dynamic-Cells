@@ -107,7 +107,8 @@ def admin_recommendations():
     doctor_filter = request.args.get('doctor_id', 'all')
     conn = get_db_connection()
     cursor = conn.cursor()
-    query = """SELECT r.*, d.name as doctor_name, d.specialty 
+    query = """SELECT r.id, r.diagnosis, r.d3_qty, r.magnesium_qty, r.status, r.created_at, 
+               d.name as doctor_name 
                FROM recommendations r JOIN doctors d ON r.doctor_id = d.id WHERE 1=1"""
     params = []
     if status_filter != 'all':
@@ -143,11 +144,10 @@ def admin_print_rec(rec_id):
     rec = cursor.fetchone()
     conn.close()
     if not rec: return "Δεν βρέθηκε", 404
-    # Εδώ καλούμε το print.html όπως επιβεβαίωσες
-    return render_template('print.html', serial=rec['id'], doctor=rec, diagnosis=rec['diagnosis'],
-                           d3_qty=rec['d3_qty'], magnesium_qty=rec['magnesium_qty'],
-                           d3_days=rec['d3_qty']*30, magnesium_days=rec['magnesium_qty']*30,
-                           special_notes=rec['special_notes'], current_date=datetime.now().strftime('%d/%m/%Y'),
+    return render_template('print.html', serial=rec['id'], doctor=rec, diagnosis=rec.get('diagnosis', ''),
+                           d3_qty=rec.get('d3_qty', 0), magnesium_qty=rec.get('magnesium_qty', 0),
+                           d3_days=rec.get('d3_qty', 0)*30, magnesium_days=rec.get('magnesium_qty', 0)*30,
+                           special_notes=rec.get('special_notes', ''), current_date=datetime.now().strftime('%d/%m/%Y'),
                            current_time=datetime.now().strftime('%H:%M'))
 
 @app.route('/admin')
