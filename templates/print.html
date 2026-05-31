@@ -39,7 +39,6 @@
 
 <div class="section">
     <div class="title">Ιατρική Αγωγή</div>
-    
     {% if d3_qty > 0 %}
     <div class="prod-line">
         <p><strong>Δραστική Ουσία:</strong> CHOLECALCIFEROL (VITAMIN D3) 4000IU + VITAMIN K2 100mcg</p>
@@ -47,7 +46,6 @@
         <p><strong>Ποσότητα:</strong> {{ d3_qty }} τεμ. | <strong>Δοσολογία:</strong> 1 δισκίο την ημέρα μαζί με το γεύμα | <strong>Διάρκεια:</strong> {{ d3_days }} ημέρες</p>
     </div>
     {% endif %}
-
     {% if magnesium_qty > 0 %}
     <div class="prod-line">
         <p><strong>Δραστική Ουσία:</strong> MAGNESIUM BISGLYCINATE 510mg + B6 2.5mg</p>
@@ -73,5 +71,18 @@
 <div class="footer">
     <p>Το παρόν έντυπο αποτελεί ιατρική σύσταση διατροφικής υποστήριξης και δεν αποτελεί κρατική συνταγή ΕΟΠΥΥ.</p>
 </div>
+
+<script>
+var rec_id = {{ serial }};
+var is_admin = {{ 'true' if is_admin is defined and is_admin else 'false' }};
+
+window.onafterprint = function() {
+    if (!is_admin) {
+        fetch('/confirm_print/' + rec_id, {method: 'POST'})
+            .then(function() { window.location.href = '/dashboard'; });
+    }
+};
+</script>
+
 </body>
 </html>
