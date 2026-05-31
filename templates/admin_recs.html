@@ -1,44 +1,67 @@
-<div class="filters">
-    <form method="GET" action="/admin/recommendations" style="display: inline;">
-        <label>Κατάσταση: </label>
-        <select name="status" onchange="this.form.submit()">
-            <option value="all" {% if status_filter == 'all' %}selected{% endif %}>Όλες</option>
-            <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Εκκρεμείς</option>
-            <option value="paid" {% if status_filter == 'paid' %}selected{% endif %}>Εκκαθαρισμένες</option>
-        </select>
-        <label>Ιατρός: </label>
-        <select name="doctor_id" onchange="this.form.submit()">
-            <option value="all">Όλοι</option>
-            {% for doc in doctors %}
-            <option value="{{ doc.id }}" {% if doctor_filter == doc.id|string %}selected{% endif %}>{{ doc.name }}</option>
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <title>Διαχείριση Συνταγών</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background-color: #f4f6f9; }
+        .container { max-width: 1200px; background: #fff; margin: 0 auto; padding: 30px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background: #333; color: white; }
+        .filters { margin-bottom: 20px; }
+        .btn-paid { background: #10b981; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>ΔΙΑΧΕΙΡΙΣΗ ΣΥΝΤΑΓΩΝ</h1>
+    
+    <div class="filters">
+        <form method="GET" action="/admin/recommendations">
+            <label>Κατάσταση: </label>
+            <select name="status" onchange="this.form.submit()">
+                <option value="all" {% if status_filter == 'all' %}selected{% endif %}>Όλες</option>
+                <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Εκκρεμείς</option>
+                <option value="paid" {% if status_filter == 'paid' %}selected{% endif %}>Εκκαθαρισμένες</option>
+            </select>
+            <label> Ιατρός: </label>
+            <select name="doctor_id" onchange="this.form.submit()">
+                <option value="all">Όλοι</option>
+                {% for doc in doctors %}
+                <option value="{{ doc.id }}" {% if doctor_filter|string == doc.id|string %}selected{% endif %}>{{ doc.name }}</option>
+                {% endfor %}
+            </select>
+        </form>
+    </div>
+
+    <table>
+        <thead>
+            <tr><th>ID</th><th>Ημερομηνία</th><th>Ιατρός</th><th>Διάγνωση</th><th>D3</th><th>Mg</th><th>Κατάσταση</th><th>Ενέργεια</th></tr>
+        </thead>
+        <tbody>
+            {% for rec in recommendations %}
+            <tr>
+                <td>{{ rec.id }}</td>
+                <td>{{ rec.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                <td>{{ rec.doctor_name }}</td>
+                <td>{{ rec.diagnosis }}</td>
+                <td>{{ rec.d3_qty }}</td>
+                <td>{{ rec.magnesium_qty }}</td>
+                <td>{{ 'ΕΚΚΡΕΜΕΙ' if rec.status == 'pending' else 'ΕΚΚΑΘΑΡΙΣΤΗΚΕ' }}</td>
+                <td>
+                    <a href="/admin/print/{{ rec.id }}" target="_blank">🖨 Εκτύπωση</a>
+                    {% if rec.status == 'pending' %}
+                    <form method="POST" action="/admin/update_status/{{ rec.id }}/paid" style="display: inline;">
+                        <button type="submit" class="btn-paid">Πληρώθηκε</button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
             {% endfor %}
-        </select>
-    </form>
+        </tbody>
+    </table>
+    <br><a href="/admin">← Πίσω στον Πίνακα Διαχείρισης</a>
 </div>
-<table>
-    <thead>
-        <tr><th>ID</th><th>Ημερομηνία</th><th>Ιατρός</th><th>Διάγνωση</th><th>D3</th><th>Mg</th><th>Κατάσταση</th><th>Ενέργεια</th></tr>
-    </thead>
-    <tbody>
-        {% for rec in recommendations %}
-        <tr>
-            <td>{{ rec.id }}</td>
-            <td>{{ rec.created_at.strftime('%d/%m/%Y %H:%M') if rec.created_at else '-' }}</td>
-            <td>{{ rec.doctor_name or '-' }}</td>
-            <td>{{ rec.diagnosis or '-' }}</td>
-            <td>{{ rec.d3_qty or 0 }}</td>
-            <td>{{ rec.magnesium_qty or 0 }}</td>
-            <td>{{ 'ΕΚΚΡΕΜΕΙ' if rec.status == 'pending' else 'ΕΚΚΑΘΑΡΙΣΤΗΚΕ' }}</td>
-            <td>
-                <a href="/admin/print/{{ rec.id }}" target="_blank">🖨 Εκτύπωση</a>
-                {% if rec.status == 'pending' %}
-                <form method="POST" action="/admin/update_status/{{ rec.id }}/paid" style="display: inline;">
-                    <button type="submit">Πληρώθηκε</button>
-                </form>
-                {% endif %}
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-<a href="/admin">← Πίσω</a>
+</body>
+</html>
