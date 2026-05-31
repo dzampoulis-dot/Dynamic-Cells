@@ -27,7 +27,7 @@
         <p><strong>Magnesium Σύνολο:</strong> {{ totals.total_mg }} | <span class="pending">Εκκρεμή:</span> {{ totals.pending_mg }} | <span class="paid">Εκκαθαρισμένα:</span> {{ totals.paid_mg }}</p>
     </div>
     <div style="text-align: center;">
-        <a href="/admin/recommendations" class="btn-manage">📋 ΔΙΑΧΕΙΡΙΣΗ ΣΥΝΤΑΓΩΝ - ΠΛΗΡΩΜΕΣ</a>
+        <a href="{{ url_for('admin_recommendations') }}" class="btn-manage">📋 ΔΙΑΧΕΙΡΙΣΗ ΣΥΝΤΑΓΩΝ - ΠΛΗΡΩΜΕΣ</a>
     </div>
     <h2>ΑΝΑ ΙΑΤΡΟ</h2>
     <table>
