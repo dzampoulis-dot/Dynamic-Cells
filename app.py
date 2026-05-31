@@ -112,7 +112,7 @@ def update_status(rec_id, status):
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('UPDATE recommendations SET status = %s WHERE id = %s', (status, rec_id))
-    conn.commit(); conn.close()
+    conn.commit(); cursor.close(); conn.close()
     return redirect(url_for('admin_recommendations'))
 
 @app.route('/admin/print/<int:rec_id>')
@@ -121,6 +121,7 @@ def admin_print_rec(rec_id):
     cursor = conn.cursor()
     cursor.execute('SELECT r.*, d.name, d.specialty, d.address, d.phone FROM recommendations r JOIN doctors d ON r.doctor_id = d.id WHERE r.id = %s', (rec_id,))
     rec = cursor.fetchone(); conn.close()
+    if not rec: return "Η συνταγή δεν βρέθηκε", 404
     return render_template('print.html', rec=rec)
 
 @app.route('/admin')
