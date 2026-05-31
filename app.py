@@ -81,7 +81,6 @@ def register():
         conn = get_db_connection()
         cursor = conn.cursor()
         try:
-            # ΔΙΟΡΘΩΣΗ: 6 πεδία, 6 %s
             cursor.execute('''INSERT INTO doctors 
                 (name, specialty, address, phone, username, password) 
                 VALUES (%s, %s, %s, %s, %s, %s) RETURNING id''',
@@ -144,7 +143,7 @@ def issue_recommendation():
     d3_days = d3_qty * 30
     magnesium_days = magnesium_qty * 30
     
-    return render_template('print_rec.html', 
+    return render_template('print.html', 
                          serial=rec_id,
                          doctor=doctor,
                          diagnosis=diagnosis,
@@ -308,7 +307,7 @@ def admin_print_rec(rec_id):
         'phone': rec['phone']
     }
     
-    return render_template('print_rec.html', 
+    return render_template('print.html', 
                          serial=rec['id'],
                          doctor=doctor,
                          diagnosis=rec['diagnosis'],
