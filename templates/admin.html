@@ -5,14 +5,30 @@
     <title>Πίνακας Διαχείρισης</title>
     <style>
         body { font-family: Arial, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; }
-        .container { max-width: 1000px; background: #fff; margin: 0 auto; padding: 30px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .container { max-width: 1200px; background: #fff; margin: 0 auto; padding: 30px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
         h1, h2 { margin-top: 0; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
         th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
         th { background: #333; color: white; }
         .stats { background: #eef2f7; padding: 15px; border-radius: 6px; margin-bottom: 20px; }
         .link { color: #2563eb; text-decoration: none; }
         .link:hover { text-decoration: underline; }
+        .btn-manage { 
+            display: inline-block; 
+            padding: 15px 30px; 
+            background: #2563eb; 
+            color: white; 
+            text-decoration: none; 
+            border-radius: 6px; 
+            font-weight: bold; 
+            font-size: 16px; 
+            margin: 20px 0;
+            text-transform: uppercase;
+        }
+        .btn-manage:hover { background: #1d4ed8; }
+        .text-center { text-align: center; }
+        .pending { color: #f59e0b; font-weight: bold; }
+        .paid { color: #10b981; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -22,9 +38,19 @@
     
     <div class="stats">
         <h2>ΣΥΝΟΛΙΚΑ ΣΤΑΤΙΣΤΙΚΑ</h2>
-        <p><strong>Σύνολο Συνταγών:</strong> {{ totals.total_recs }}</p>
-        <p><strong>D3 Σύνολο:</strong> {{ totals.total_d3 }} τεμ. | <strong>Εκκρεμεί:</strong> {{ totals.pending_d3 }} | <strong>Πληρωμένα:</strong> {{ totals.paid_d3 }}</p>
-        <p><strong>Magnesium Σύνολο:</strong> {{ totals.total_mg }} τεμ. | <strong>Εκκρεμεί:</strong> {{ totals.pending_mg }} | <strong>Πληρωμένα:</strong> {{ totals.paid_mg }}</p>
+        <p><strong>Σύνολο Συνταγών:</strong> {{ totals.total_recs | default(0) }}</p>
+        <p><strong>D3 Σύνολο:</strong> {{ totals.total_d3 | default(0) }} τεμ. | 
+           <span class="pending">Εκκρεμή:</span> {{ totals.pending_d3 | default(0) }} | 
+           <span class="paid">Εκκαθαρισμένα:</span> {{ totals.paid_d3 | default(0) }}</p>
+        <p><strong>Magnesium Σύνολο:</strong> {{ totals.total_mg | default(0) }} τεμ. | 
+           <span class="pending">Εκκρεμή:</span> {{ totals.pending_mg | default(0) }} | 
+           <span class="paid">Εκκαθαρισμένα:</span> {{ totals.paid_mg | default(0) }}</p>
+    </div>
+
+    <div class="text-center">
+        <a href="/admin/recommendations" class="btn-manage">
+            📋 ΔΙΑΧΕΙΡΙΣΗ ΣΥΝΤΑΓΩΝ - ΠΛΗΡΩΜΕΣ
+        </a>
     </div>
 
     <h2>ΑΝΑ ΙΑΤΡΟ</h2>
@@ -35,24 +61,27 @@
             <th>Συνταγές</th>
             <th>D3 Σύνολο</th>
             <th>Mg Σύνολο</th>
-            <th>Εκκρεμή D3</th>
-            <th>Εκκρεμή Mg</th>
+            <th class="pending">Εκκρεμή D3</th>
+            <th class="pending">Εκκρεμή Mg</th>
+            <th class="paid">Εκκαθ. D3</th>
+            <th class="paid">Εκκαθ. Mg</th>
         </tr>
         {% for doc in doctor_stats %}
         <tr>
             <td>{{ doc.name }}</td>
             <td>{{ doc.specialty }}</td>
-            <td>{{ doc.total_recs }}</td>
-            <td>{{ doc.total_d3 }}</td>
-            <td>{{ doc.total_mg }}</td>
-            <td>{{ doc.pending_d3 }}</td>
-            <td>{{ doc.pending_mg }}</td>
+            <td>{{ doc.total_recs | default(0) }}</td>
+            <td>{{ doc.total_d3 | default(0) }}</td>
+            <td>{{ doc.total_mg | default(0) }}</td>
+            <td class="pending">{{ doc.pending_d3 | default(0) }}</td>
+            <td class="pending">{{ doc.pending_mg | default(0) }}</td>
+            <td class="paid">{{ doc.paid_d3 | default(0) }}</td>
+            <td class="paid">{{ doc.paid_mg | default(0) }}</td>
         </tr>
         {% endfor %}
     </table>
 
     <br>
-    <a href="/admin/recommendations" class="link">Δες όλες τις συνταγές</a> | 
     <a href="/dashboard" class="link">Πίσω στο Dashboard</a> | 
     <a href="/logout" class="link">Αποσύνδεση</a>
 </div>
