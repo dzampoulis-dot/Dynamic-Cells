@@ -26,8 +26,8 @@ def init_db():
     cursor.execute('''CREATE TABLE IF NOT EXISTS recommendations (
         id SERIAL PRIMARY KEY, doctor_id INTEGER REFERENCES doctors(id), 
         diagnosis TEXT, d3_qty INTEGER DEFAULT 0, magnesium_qty INTEGER DEFAULT 0, 
-        special_notes TEXT, status TEXT DEFAULT 'pending',
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)''')
+        special_notes TEXT, status TEXT DEFAULT 'pending')''')
+    cursor.execute('''ALTER TABLE recommendations ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP''')
     cursor.execute('''UPDATE recommendations SET created_at = CURRENT_TIMESTAMP WHERE created_at IS NULL''')
     cursor.execute('''DELETE FROM recommendations WHERE status = 'draft' ''')
     conn.commit()
@@ -66,7 +66,7 @@ def register():
         cursor = conn.cursor()
         try:
             cursor.execute('''INSERT INTO doctors (name, specialty, address, phone, username, password) 
-                VALUES (%s, %s, %s, %s, %s, %s) RETURNING id''',
+                Values (%s, %s, %s, %s, %s, %s) RETURNING id''',
                 (request.form['name'], request.form['specialty'], request.form['address'], 
                  request.form['phone'], request.form['username'].lower(), generate_password_hash(request.form['password'])))
             session['doctor_id'] = cursor.fetchone()['id']
