@@ -14,25 +14,6 @@ def get_db_connection():
     conn_str = DATABASE_URL if 'sslmode' in DATABASE_URL else DATABASE_URL + "?sslmode=require"
     return psycopg2.connect(conn_str, cursor_factory=DictCursor)
 
-def init_db():
-    conn = get_db_connection()
-    if not conn: return
-    cursor = conn.cursor()
-    cursor.execute('''CREATE TABLE IF NOT EXISTS doctors (
-        id SERIAL PRIMARY KEY, name TEXT, specialty TEXT, address TEXT, 
-        phone TEXT, username TEXT UNIQUE, password TEXT)''')
-    cursor.execute('''CREATE TABLE IF NOT EXISTS recommendations (
-        id SERIAL PRIMARY KEY, doctor_id INTEGER REFERENCES doctors(id), 
-        diagnosis TEXT, d3_qty INTEGER DEFAULT 0, magnesium_qty INTEGER DEFAULT 0, 
-        special_notes TEXT, status TEXT DEFAULT 'pending',
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)''')
-    conn.commit()
-    cursor.close()
-    conn.close()
-
-try: init_db()
-except Exception as e: print(f"DB init error: {e}")
-
 @app.route('/')
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -56,8 +37,7 @@ def register():
         conn = get_db_connection()
         cursor = conn.cursor()
         try:
-            cursor.execute('''INSERT INTO doctors (name, specialty, address, phone, username, password) 
-                VALUES (%s, %s, %s, %s, %s, %s)''', 
+            cursor.execute('INSERT INTO doctors (name, specialty, address, phone, username, password) VALUES (%s, %s, %s, %s, %s, %s)', 
                 (request.form['name'], request.form['specialty'], request.form['address'], 
                  request.form['phone'], request.form['username'].lower(), generate_password_hash(request.form['password'])))
             conn.commit()
@@ -97,14 +77,14 @@ def admin_recommendations():
     doctor_filter = request.args.get('doctor_id', 'all')
     conn = get_db_connection()
     cursor = conn.cursor()
-    query = """SELECT r.*, d.name as doctor_name FROM recommendations r JOIN doctors d ON r.doctor_id = d.id WHERE 1=1"""
+    query = "SELECT r.*, d.name as doctor_name FROM recommendations r JOIN doctors d ON r.doctor_id = d.id WHERE 1=1"
     params = []
     if status_filter != 'all': query += ' AND r.status = %s'; params.append(status_filter)
     if doctor_filter != 'all': query += ' AND r.doctor_id = %s'; params.append(int(doctor_filter))
     query += ' ORDER BY r.created_at DESC'
     cursor.execute(query, tuple(params))
     recs = cursor.fetchall()
-    cursor.execute('SELECT id, name FROM doctors WHERE username != %s', ('admin',))
+    cursor.execute('SELECT id, name FROM doctors')
     docs = cursor.fetchall()
     conn.close()
     return render_template('admin_recs.html', recommendations=recs, doctors=docs, status_filter=status_filter, doctor_filter=doctor_filter)
@@ -123,8 +103,10 @@ def admin_print_rec(rec_id):
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('SELECT r.*, d.name, d.specialty, d.address, d.phone FROM recommendations r JOIN doctors d ON r.doctor_id = d.id WHERE r.id = %s', (rec_id,))
-    rec = cursor.fetchone(); conn.close()
-    return render_template('print.html', doctor=rec, rec=rec)
+    rec = cursor.fetchone()
+    conn.close()
+    if not rec: return "Η συνταγή δεν βρέθηκε", 404
+    return render_template('print.html', rec=rec)
 
 @app.route('/admin')
 def admin():
