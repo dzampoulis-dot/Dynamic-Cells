@@ -5,10 +5,11 @@
     <title>Διαχείριση Συνταγών</title>
     <style>
         body { font-family: Arial, sans-serif; padding: 20px; background-color: #f4f6f9; }
-        .container { max-width: 1200px; background: #fff; margin: 0 auto; padding: 30px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .container { max-width: 1400px; background: #fff; margin: 0 auto; padding: 30px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-        th { background: #333; color: white; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; font-size: 13px; }
+        th { background: #333; color: white; white-space: nowrap; }
+        td.serial { font-family: monospace; font-size: 13px; white-space: nowrap; }
         .filters { margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 15px; align-items: flex-end; }
         .filter-group { display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: bold; }
         .filter-group select, .filter-group input { padding: 7px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
@@ -54,12 +55,12 @@
     </form>
     <table>
         <thead>
-            <tr><th>ID</th><th>Ημερομηνία</th><th>Ιατρός</th><th>Διάγνωση</th><th>D3</th><th>Mg</th><th>Κατάσταση</th><th>Ενέργεια</th></tr>
+            <tr><th>ΑΡΙΘΜΟΣ ΣΥΝΤΑΓΗΣ</th><th>Ημερομηνία</th><th>Ιατρός</th><th>Διάγνωση</th><th>D3</th><th>Mg</th><th>Κατάσταση</th><th>Ενέργεια</th></tr>
         </thead>
         <tbody>
             {% for rec in recommendations %}
             <tr>
-                <td>{{ rec['id'] }}</td>
+                <td class="serial">{{ rec['serial_number'] or rec['id'] }}</td>
                 <td>{{ rec['created_at'].strftime('%d/%m/%Y %H:%M') if rec['created_at'] else '-' }}</td>
                 <td>{{ rec['doctor_name'] }}</td>
                 <td>{{ rec['diagnosis'] }}</td>
