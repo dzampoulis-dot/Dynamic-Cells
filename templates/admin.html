@@ -13,6 +13,8 @@
         .stats { background: #eef2f7; padding: 15px; border-radius: 6px; margin-bottom: 20px; }
         .link { color: #2563eb; text-decoration: none; }
         .btn-manage { display: inline-block; padding: 15px 30px; background: #2563eb; color: white; text-decoration: none; border-radius: 6px; font-weight: bold; margin: 20px 0; text-transform: uppercase; }
+        .btn-excel { display: inline-block; padding: 8px 18px; background: #16a34a; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 14px; text-decoration: none; margin-bottom: 10px; }
+        .btn-excel:hover { background: #15803d; }
         .pending { color: #f59e0b; font-weight: bold; }
         .paid { color: #10b981; font-weight: bold; }
     </style>
@@ -30,18 +32,38 @@
         <a href="{{ url_for('admin_recommendations') }}" class="btn-manage">📋 ΔΙΑΧΕΙΡΙΣΗ ΣΥΝΤΑΓΩΝ - ΠΛΗΡΩΜΕΣ</a>
     </div>
     <h2>ΑΝΑ ΙΑΤΡΟ</h2>
-    <table>
-        <tr><th>Ιατρός</th><th>Ειδικότητα</th><th>Συνταγές</th><th>D3</th><th>Mg</th><th class="pending">Εκκρεμή D3</th><th class="pending">Εκκρεμή Mg</th><th class="paid">Εκκαθ. D3</th><th class="paid">Εκκαθ. Mg</th></tr>
+    <button class="btn-excel" onclick="exportExcel()">📥 Εξαγωγή σε Excel</button>
+    <table id="doctors-table">
+        <tr><th>Ιατρός</th><th>Ειδικότητα</th><th>Συνταγές</th><th>D3</th><th>Mg</th><th>Εκκρεμή D3</th><th>Εκκρεμή Mg</th><th>Εκκαθ. D3</th><th>Εκκαθ. Mg</th></tr>
         {% for doc in doctor_stats %}
         <tr>
             <td>{{ doc.name }}</td><td>{{ doc.specialty }}</td><td>{{ doc.total_recs }}</td>
             <td>{{ doc.total_d3 }}</td><td>{{ doc.total_mg }}</td>
-            <td class="pending">{{ doc.pending_d3 }}</td><td class="pending">{{ doc.pending_mg }}</td>
-            <td class="paid">{{ doc.paid_d3 }}</td><td class="paid">{{ doc.paid_mg }}</td>
+            <td>{{ doc.pending_d3 }}</td><td>{{ doc.pending_mg }}</td>
+            <td>{{ doc.paid_d3 }}</td><td>{{ doc.paid_mg }}</td>
         </tr>
         {% endfor %}
     </table>
     <br><a href="/dashboard" class="link">Πίσω στο Dashboard</a> | <a href="/logout" class="link">Αποσύνδεση</a>
 </div>
+<script>
+function exportExcel() {
+    var table = document.getElementById('doctors-table');
+    var rows = table.querySelectorAll('tr');
+    var csv = [];
+    rows.forEach(function(row) {
+        var cols = row.querySelectorAll('th, td');
+        var rowData = [];
+        cols.forEach(function(col) { rowData.push('"' + col.innerText + '"'); });
+        csv.push(rowData.join(','));
+    });
+    var blob = new Blob(['\uFEFF' + csv.join('\n')], {type: 'text/csv;charset=utf-8;'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'στατιστικα_ιατρων.csv';
+    a.click();
+}
+</script>
 </body>
 </html>
