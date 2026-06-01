@@ -16,6 +16,8 @@
         .btn-filter { padding: 8px 18px; background: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
         .btn-filter:hover { background: #1d4ed8; }
         .btn-reset { padding: 8px 18px; background: #6b7280; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; text-decoration: none; }
+        .btn-excel { padding: 8px 18px; background: #16a34a; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 14px; }
+        .btn-excel:hover { background: #15803d; }
         .btn-paid { background: #10b981; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
     </style>
 </head>
@@ -51,9 +53,10 @@
             </div>
             <button type="submit" class="btn-filter">Εφαρμογή</button>
             <a href="{{ url_for('admin_recommendations') }}" class="btn-reset">Καθαρισμός</a>
+            <button type="button" class="btn-excel" onclick="exportExcel()">📥 Εξαγωγή σε Excel</button>
         </div>
     </form>
-    <table>
+    <table id="recs-table">
         <thead>
             <tr><th>ΑΡΙΘΜΟΣ ΣΥΝΤΑΓΗΣ</th><th>Ημερομηνία</th><th>Ιατρός</th><th>Διάγνωση</th><th>D3</th><th>Mg</th><th>Κατάσταση</th><th>Ενέργεια</th></tr>
         </thead>
@@ -81,5 +84,26 @@
     </table>
     <br><a href="{{ url_for('admin') }}">← Πίσω στον Πίνακα Διαχείρισης</a>
 </div>
+<script>
+function exportExcel() {
+    var table = document.getElementById('recs-table');
+    var rows = table.querySelectorAll('tr');
+    var csv = [];
+    rows.forEach(function(row) {
+        var cols = row.querySelectorAll('th, td');
+        var rowData = [];
+        cols.forEach(function(col, i) {
+            if (i < 7) rowData.push('"' + col.innerText.trim() + '"');
+        });
+        csv.push(rowData.join(','));
+    });
+    var blob = new Blob(['\uFEFF' + csv.join('\n')], {type: 'text/csv;charset=utf-8;'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'συνταγες.csv';
+    a.click();
+}
+</script>
 </body>
 </html>
