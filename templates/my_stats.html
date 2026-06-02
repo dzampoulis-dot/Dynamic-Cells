@@ -71,12 +71,12 @@
 
     <table>
         <thead>
-            <tr><th>ID</th><th>Ημερομηνία</th><th>Διάγνωση</th><th>D3</th><th>Mg</th><th>Κατάσταση</th></tr>
+            <tr><th>ΑΡΙΘΜΟΣ ΣΥΝΤΑΓΗΣ</th><th>Ημερομηνία</th><th>Διάγνωση</th><th>D3</th><th>Mg</th><th>Κατάσταση</th></tr>
         </thead>
         <tbody>
             {% for rec in recs %}
             <tr>
-                <td>{{ rec['id'] }}</td>
+                <td style="font-family:monospace;">{{ rec['serial_number'] or rec['id'] }}</td>
                 <td>{{ rec['created_at'].strftime('%d/%m/%Y %H:%M') if rec['created_at'] else '-' }}</td>
                 <td>{{ rec['diagnosis'] or '-' }}</td>
                 <td>{{ rec['d3_qty'] or 0 }}</td>
