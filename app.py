@@ -33,7 +33,6 @@ def init_db():
     cursor.execute('''UPDATE recommendations SET created_at = CURRENT_TIMESTAMP WHERE created_at IS NULL''')
     cursor.execute('''DELETE FROM recommendations WHERE status = 'draft' ''')
     
-    # Δίνουμε doctor_code στους υπάρχοντες γιατρούς
     cursor.execute('SELECT id FROM doctors WHERE doctor_code IS NULL ORDER BY id')
     doctors_without_code = cursor.fetchall()
     cursor.execute('SELECT COUNT(*) as cnt FROM doctors WHERE doctor_code IS NOT NULL')
@@ -42,7 +41,6 @@ def init_db():
         code = str(existing_count + i + 1).zfill(3)
         cursor.execute('UPDATE doctors SET doctor_code = %s WHERE id = %s', (code, doc['id']))
     
-    # Δίνουμε serial_number στις υπάρχουσες συνταγές
     cursor.execute('''SELECT r.id, r.doctor_id, d.doctor_code 
                       FROM recommendations r JOIN doctors d ON r.doctor_id = d.id 
                       WHERE r.serial_number IS NULL AND r.status != 'draft'
@@ -292,6 +290,25 @@ def admin_print_rec(rec_id):
                            magnesium_days=rec['magnesium_qty']*30, special_notes=rec['special_notes'], 
                            current_date=datetime.now().strftime('%d/%m/%Y'), current_time=datetime.now().strftime('%H:%M'),
                            is_admin=True)
+
+@app.route('/admin/reset_password', methods=['GET', 'POST'])
+def reset_password():
+    if session.get('username') != 'admin': return "Δεν έχετε δικαίωμα πρόσβασης!", 403
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    message = None
+    if request.method == 'POST':
+        doctor_id = request.form.get('doctor_id')
+        new_password = request.form.get('new_password')
+        if doctor_id and new_password:
+            cursor.execute('UPDATE doctors SET password = %s WHERE id = %s',
+                           (generate_password_hash(new_password), int(doctor_id)))
+            conn.commit()
+            message = 'Ο κωδικός άλλαξε επιτυχώς!'
+    cursor.execute('SELECT id, name, username FROM doctors WHERE username != %s ORDER BY name', ('admin',))
+    doctors = cursor.fetchall()
+    conn.close()
+    return render_template('reset_password.html', doctors=doctors, message=message)
 
 @app.route('/logout')
 def logout():
