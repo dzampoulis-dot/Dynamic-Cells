@@ -310,6 +310,10 @@ def reset_password():
     conn.close()
     return render_template('reset_password.html', doctors=doctors, message=message)
 
+@app.route('/privacy')
+def privacy():
+    return render_template('privacy.html')
+
 @app.route('/logout')
 def logout():
     session.clear(); return redirect(url_for('login'))
