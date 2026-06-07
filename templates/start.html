@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <title>Ξεκινήστε - Dynamic Cells</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: Arial, sans-serif;
+            background-image: url('https://cdn.shopify.com/s/files/1/0906/4575/8288/files/bg_jpg.jpg?v=1779997490');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+        .container {
+            background: rgba(255,255,255,0.96);
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+        h1 { font-size: 26px; color: #000; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+        .subtitle { color: #555; font-size: 14px; margin-bottom: 35px; font-weight: bold; text-transform: uppercase; }
+        .step { background: #f8f9fa; border-radius: 8px; padding: 20px; margin-bottom: 15px; text-align: left; border-left: 4px solid #333; }
+        .step-num { font-size: 12px; font-weight: bold; color: #888; text-transform: uppercase; margin-bottom: 6px; }
+        .step-title { font-size: 15px; font-weight: bold; color: #1f2937; margin-bottom: 12px; }
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 13px;
+            border: none;
+            border-radius: 6px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            text-align: center;
+            transition: background 0.2s;
+        }
+        .btn-chrome { background: #2563eb; color: white; }
+        .btn-chrome:hover { background: #1d4ed8; }
+        .btn-register { background: #28a745; color: white; }
+        .btn-register:hover { background: #218838; }
+        .btn-login { background: #333; color: white; }
+        .btn-login:hover { background: #000; }
+        .divider { border: 0; border-top: 1px solid #ddd; margin: 25px 0; }
+        .already { font-size: 13px; color: #666; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>DYNAMIC CELLS</h1>
+    <p class="subtitle">Σύστημα Ιατρικής Αγωγής</p>
+
+    <div class="step">
+        <div class="step-num">Βήμα 1 — Προαιρετικό</div>
+        <div class="step-title">🔧 Εγκατάσταση επέκτασης Chrome</div>
+        <a href="https://chromewebstore.google.com/detail/dynamic-cells-helper/pjnimpnkndlbkgdjjdcceldcjjanhjme" target="_blank" class="btn btn-chrome">
+            Εγκατάσταση στο Chrome
+        </a>
+        <p style="font-size:12px; color:#888; margin-top:8px;">Προσθέτει κουμπί γρήγορης πρόσβασης στο e-prescription.gr</p>
+    </div>
+
+    <div class="step">
+        <div class="step-num">Βήμα 2</div>
+        <div class="step-title">📝 Δημιουργία λογαριασμού</div>
+        <a href="/register" class="btn btn-register">Εγγραφή νέου ιατρού</a>
+    </div>
+
+    <hr class="divider">
+
+    <p class="already">Έχετε ήδη λογαριασμό;</p>
+    <a href="/login" class="btn btn-login">Είσοδος</a>
+</div>
+</body>
+</html>
