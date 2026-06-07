@@ -314,6 +314,10 @@ def reset_password():
 def privacy():
     return render_template('privacy.html')
 
+@app.route('/start')
+def start():
+    return render_template('start.html')
+
 @app.route('/logout')
 def logout():
     session.clear(); return redirect(url_for('login'))
